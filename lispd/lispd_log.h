@@ -118,6 +118,9 @@ const char* (*preprocess_item)( const lispd_log_item_type_t type, void *data);
 //void *data;
 } lispd_log_ops_t;
 
+/** KEPT for retrocompatibility, remove once the new logger is ok **/
+void lispd_log_msg( const lispd_log_level_t lispd_log_level, const char *format, ...);
+
 /*
  * True if log_level is enough to print results
  */

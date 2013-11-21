@@ -496,7 +496,7 @@ void exit_cleanup(void);
 
 
 /* temporary HACK */
-#define lispd_log_msg(LOG_LEVEL, ...) lispd_logger.log( (LOG_LEVEL), __VA_ARGS__)
+//#define lispd_log_msg(LOG_LEVEL, ...) lispd_logger.log( (LOG_LEVEL), __VA_ARGS__)
 
 #endif /*LISPD_H_*/
 
