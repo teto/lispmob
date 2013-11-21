@@ -25,7 +25,7 @@ ifeq "$(debug)" ""
 	CFLAGS  += -g
 endif
 
-ifeq "$(upnp)" ""
+ifeq "$(upnp)" "yes"
 	CFLAGS  += -DLISPD_ENABLE_UPNP
 	LIBS    += -lminiupnpc
 endif
