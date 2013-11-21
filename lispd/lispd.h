@@ -61,6 +61,7 @@
 #include <linux/rtnetlink.h>
 #include "lispd_log.h"
 
+lispd_log_ops_t lispd_logger;
 
 /*
  *  Protocols constants related with timeouts
@@ -492,7 +493,7 @@ typedef struct lisp_encap_control_hdr {
 
 void exit_cleanup(void);
 
-lispd_log_ops_t lispd_logger;
+
 
 /* temporary HACK */
 #define lispd_log_msg(LOG_LEVEL, ...) lispd_logger.log( (LOG_LEVEL), __VA_ARGS__)

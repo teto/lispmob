@@ -149,7 +149,7 @@ int main(int argc, char **argv)
     lispd_log_msg(LISP_LOG_INFO,"LISPmob compiled for linux xTR\n");
 #endif
 #else
-    lispd_log_msg(LISP_LOG_INFO,"LISPmob compiled for mobile node\n");
+    LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node\n");
 #endif
 
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
      */
 
     if (geteuid()) {
-        lispd_log_msg(LISP_LOG_INFO,"Running %s requires superuser privileges! Exiting...\n", LISPD);
+        LISPD_LOG(LISP_LOG_INFO,"Running ",LISPD," requires superuser privileges! Exiting...\n");
         exit_cleanup();
     }
 
@@ -504,7 +504,7 @@ void exit_cleanup(void) {
     close_output_sockets();
     /* Close netlink socket */
     close(netlink_fd);
-    lispd_log_msg(LISP_LOG_INFO,"Exiting ...");
+    LISPD_LOG(LISP_LOG_INFO,"Exiting ...\n");
 
     exit(EXIT_SUCCESS);
 }
