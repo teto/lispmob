@@ -1,5 +1,6 @@
+
 /*
- * lispd_log.c
+ * lispd_log_console.c
  *
  * This file is part of LISP Mobile Node Implementation.
  * Write log messages
@@ -29,27 +30,16 @@
  *    Alberto Rodriguez Natal <arnatal@ac.ucp.edu>
  *
  */
+#pragma once
+
+#ifndef LISPD_LOG_CONSOLE_H_
+#define LISPD_LOG_CONSOLE_H_
 
 #include "lispd_log.h"
 #include "lispd_external.h"
 #include <syslog.h>
 #include <stdarg.h>
 
-/*
- * True if log_level is enough to print results
- */
+extern lispd_log_ops_t log_console_ops;
 
-int is_loggable (int log_level){
-    if (log_level < LISP_LOG_DEBUG_1)
-        return (TRUE);
-    else if (log_level <= LISP_LOG_INFO + debug_level)
-        return (TRUE);
-    return (FALSE);
-}
-
-/*
- * Editor modelines
- *
- * vi: set shiftwidth=4 tabstop=4 expandtab:
- * :indentSize=4:tabSize=4:noTabs=true:
- */
+#endif // LISPD_LOG_CONSOLE_H_

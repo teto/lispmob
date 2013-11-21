@@ -3,7 +3,7 @@
  *
  * This file is part of LISP Mobile Node Implementation.
  * Definitions for lispd.
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -178,7 +178,7 @@ int err;
 #define FALSE               0
 #define UP                  1
 #define DOWN                0
-#define UNKNOWN            -1  
+#define UNKNOWN            -1
 
 /***** NAT status *******/
 //#define UNKNOWN          -1
@@ -243,7 +243,7 @@ int err;
  * Netlink mcast groups lispd is interested in
  * for interface management
  */
-#define LISPD_IFACE_NLMGRPS     (RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV4_ROUTE) 
+#define LISPD_IFACE_NLMGRPS     (RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV4_ROUTE)
 /* #define LISPD_IFACE_NLMGRPS     (RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR \
                                                 | RTMGRP_IPV4_ROUTE | RTMGRP_IPV6_ROUTE )
 */
@@ -368,7 +368,7 @@ typedef struct lispd_xTR_ID_
  *  d      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *  |     /|    Priority   |    Weight     |  M Priority   |   M Weight    |
  *  |    / +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |  Loc |         Unused Flags    |L|p|R|           Loc-AFI             | 
+ *  |  Loc |         Unused Flags    |L|p|R|           Loc-AFI             |
  *  |    \ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *  |     \|                             Locator                           |
  *  +--->  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -492,6 +492,10 @@ typedef struct lisp_encap_control_hdr {
 
 void exit_cleanup(void);
 
+lispd_log_ops_t lispd_logger;
+
+/* temporary HACK */
+#define lispd_log_msg(LOG_LEVEL, ...) lispd_logger.log( (LOG_LEVEL), __VA_ARGS__)
 
 #endif /*LISPD_H_*/
 
