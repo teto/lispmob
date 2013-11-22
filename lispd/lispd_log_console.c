@@ -130,11 +130,31 @@ static void lispd_log_to_console(
 //    }
 //}
 
-lispd_log_ops_t log_console_ops = {
-    .start_log = NULL,
-    .close_log = NULL,
-    .log = &lispd_log_to_console
 
+void lispd_log_console_close_entry(lispd_log_entry_t entry)
+{
+    // Nothing to do
+}
+
+void lispd_log_console_append_to_entry(lispd_log_entry_t entry, const lispd_log_item_type_t type, char* str, int integer, void *data)
+{
+    if (type == col_default) {
+        printf("Param [%s]", str);
+        return;
+    }
+
+    printf("Unsupported type %d", type);
+}
+
+
+
+lispd_log_ops_t log_console_ops = {
+    .start_logger = NULL,
+    .close_logger = NULL,
+//    .log = &lispd_log_to_console,
+    .new_entry = &lispd_log_new_entry,
+    .close_entry = &lispd_log_console_close_entry,
+    .append_to_entry = &lispd_log_console_append_to_entry
 //    .preprocess_item = NULL
 };
 

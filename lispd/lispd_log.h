@@ -60,9 +60,39 @@ col_mapresolver,
 col_last
 } lispd_log_item_type_t ;
 
+
+/* http://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/
+replace 0 by empty or not */
+#define _ARG16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, ...) _15
+#define HAS_COMMA(...) _ARG16(__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+#define _TRIGGER_PARENTHESIS_(...) ,
+
+#define ISEMPTY(...)                                                    \
+_ISEMPTY(                                                               \
+          /* test if there is just one argument, eventually an empty    \
+             one */                                                     \
+          HAS_COMMA(__VA_ARGS__),                                       \
+          /* test if _TRIGGER_PARENTHESIS_ together with the argument   \
+             adds a comma */                                            \
+          HAS_COMMA(_TRIGGER_PARENTHESIS_ __VA_ARGS__),                 \
+          /* test if the argument together with a parenthesis           \
+             adds a comma */                                            \
+          HAS_COMMA(__VA_ARGS__ (/*empty*/)),                           \
+          /* test if placing it between _TRIGGER_PARENTHESIS_ and the   \
+             parenthesis adds a comma */                                \
+          HAS_COMMA(_TRIGGER_PARENTHESIS_ __VA_ARGS__ (/*empty*/))      \
+          )
+
+#define PASTE5(_0, _1, _2, _3, _4) _0 ## _1 ## _2 ## _3 ## _4
+#define _ISEMPTY(_0, _1, _2, _3) HAS_COMMA(PASTE5(_IS_EMPTY_CASE_, _0, _1, _2, _3))
+#define _IS_EMPTY_CASE_0001 ,
+
+
+
+// TODO if there is an empty parameter, then the next one is already expanded
 #ifdef LISPD_ENABLE_PREPROCESSING
-    #define LISPD_EID( ip )  logger.preprocess_item(col_eid, ip)
-    #define LISPD_RLOC( ip )  "%R", ip
+    #define LISPD_EID( ip )  ,logger.append_to_entry(entry, col_eid, ip)
+    #define LISPD_RLOC( ip ) lispd_logger.append_to_entry(entry, col_rloc, ip)
 //    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
 //    #define LISPD_MASK( mask)  lispd_color_output( 0, mask,  col_port)
     #define LISPD_PORT( port )  (port)
@@ -90,11 +120,59 @@ col_last
 
 
 /* Used to count the number of arguments (up to 10 arguments, update the macros if you need more) */
-#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 9,8,7,6,5,4,3,2,1)
+#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,3,2,1)
 #define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5, _6, _7, _8, _9, N,...) N
 
+
+
+#define CONCAT(a, b) a##b
+
+/* Should not be called like this */
+#define LISP_LOG0( level, ...)  "Needs format"
+
+
+/* Add more if needed */
+
+
+/* we should */
+#define LISP_LOG_SEVERAL(arg1,arg2,...) LISP_LOG2(arg1,arg2) LISP_LOG_SEVERAL(arg2,__VA_ARGS__)
+
+
+#define LISP_LOG3( arg1, arg2, arg3 )  LISP_LOG2(arg1,arg2) LISP_LOG2(arg2,arg3)
+
+/* if arg1 empty, then copy arg2 as is, else consider it as string */
+#define LISP_LOG2( arg1, arg2 )  LISP_LOG2_( ISEMPTY(arg1) , arg1,arg2)
+#define LISP_LOG2_( isempty, arg1, arg2 ) CONCAT(LISP_LOG2_, isempty ) (arg1,arg2)
+
+#define LISP_LOG2_0( arg1, arg2 ) arg2;
+#define LISP_LOG2_1( arg1, arg2 ) LISP_LOG1( arg1 )
+//LISP_LOG2(arg2, )
+
+/* might be a corner case if str empty ? */
+#define LISP_LOG1( str )    lispd_logger.append_to_entry(entry,col_default, str, 0, 0);
+//LISP_LOG_FINAL((lispd_log_level),  "%s: " format, __func__)
+
+// appele avant
+/* last argument is empty */
+#define LISPD_LOG( lispd_log_level,  ... )  do { \
+                                                               lispd_log_entry_t entry = lispd_logger.new_entry(lispd_log_level); \
+                                                               if( !entry ) break; \
+                                                              LISPD_CALL_ADEQUATE_LOG( VA_NUM_ARGS(__VA_ARGS__,) , __VA_ARGS__,) \
+                                                            lispd_logger.close_entry(entry); \
+                                                        } while(0)
+
+
+
+#define LISPD_CALL_ADEQUATE_LOG( nargs , ... ) LISPD_CALL_ADEQUATE_LOG_( CONCAT(LISP_LOG , nargs) , __VA_ARGS__ )
+#define LISPD_CALL_ADEQUATE_LOG_( name, ... ) name( __VA_ARGS__)
+
+
+
+//#define LISPD_LOG( lispd_log_level, ...)   LISPD_CALL_ADEQUATE_LOG( VA_NUM_ARGS(__VA_ARGS__) , lispd_log_level, __VA_ARGS__)
+
 /* to verify preprocessor output, run the preprocessor alone (g++ -E lispd.c for instance): */
-#define LISPD_LOG( lispd_log_level, ...)   lispd_logger.log( lispd_log_level, VA_NUM_ARGS(__VA_ARGS__) ,  __VA_ARGS__)
+//#define LISPD_LOG( lispd_log_level, ...)   lispd_logger.log( lispd_log_level, VA_NUM_ARGS(__VA_ARGS__) ,  __VA_ARGS__)
+
 
 
 
@@ -109,17 +187,23 @@ LISP_LOG_DEBUG_3             /* high debug-level messages -> Log for each receiv
 } lispd_log_level_t;
 
 
+typedef char* lispd_log_entry_t;
 
 
 typedef struct  {
-int (*start_log)(const char *data);     /* data passed on via cli or config file */
-int (*close_log)(void *data);
-void (*log)(const lispd_log_level_t lispd_log_level, ...);
-//const char* (*preprocess_item)( const lispd_log_item_type_t type, void *data);
+int (*start_logger)(const char *data);     /* data passed on via cli or config file */
+int (*close_logger)(void *data);
+lispd_log_entry_t (*new_entry)(const lispd_log_level_t lispd_log_level);
+void (*close_entry)(lispd_log_entry_t entry);
+//void (*log)(const lispd_log_level_t lispd_log_level, ...);
+void (*append_to_entry)(lispd_log_entry_t entry, const lispd_log_item_type_t type, char* str, int integer, void *data);
 } lispd_log_ops_t;
 
 /** KEPT for retrocompatibility, remove once the new logger is ok **/
 void lispd_log_msg( const lispd_log_level_t lispd_log_level, const char *format, ...);
+
+
+lispd_log_entry_t lispd_log_new_entry(const lispd_log_level_t lispd_log_level);
 
 /*
  * True if log_level is enough to print results

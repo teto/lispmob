@@ -54,7 +54,24 @@ inline void lispd_log(
         va_list     args);
 
 
+#define MAX_STRING_LENGTH 500
+    #define POOL_SIZE 5
+lispd_log_entry_t lispd_log_new_entry(const lispd_log_level_t log_level)
+{
+    /* 1 should be enough */
 
+
+    static char temp[POOL_SIZE][ MAX_STRING_LENGTH ];
+    static unsigned int i = 0; //XXX Too much memory allocation for this, but standard syntax
+
+    if (! is_loggable(log_level))   return 0;
+
+    /* Hack to allow more than one addresses per printf line. Now maximum = 5 */
+    i++;
+    i = i % POOL_SIZE;
+
+    return &temp[i];
+}
 
 
 void lispd_log_msg(

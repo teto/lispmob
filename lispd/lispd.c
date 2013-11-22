@@ -151,14 +151,16 @@ int main(int argc, char **argv)
 #else
     LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node\n");
 #endif
-    LISPD_LOG(LISP_LOG_INFO,"test rloc", LISPD_RLOC("mon rloc"),"\n");
+    LISPD_LOG(LISP_LOG_INFO,"test rloc", "\n");
+//    LISPD_LOG(LISP_LOG_INFO,"test rloc", LISPD_RLOC("mon rloc"),"\n");
 
     /*
      *  Check for superuser privileges
      */
 
     if (geteuid()) {
-        LISPD_LOG(LISP_LOG_INFO,"Running ",LISPD," requires superuser privileges! Exiting...\n");
+    //",LISPD,"
+        LISPD_LOG(LISP_LOG_INFO,"Running requires superuser privileges! Exiting...\n");
         exit_cleanup();
     }
 
