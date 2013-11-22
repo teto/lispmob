@@ -5,7 +5,7 @@
  * Handle lispd command line and config file
  * Parse command line args using gengetopt.
  * Handle config file with libconfuse.
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -630,7 +630,7 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
     for(i = 0; i < n; i++) {
         if ((map_resolver = cfg_getnstr(cfg, "map-resolver", i)) != NULL) {
             if (add_server(map_resolver, &map_resolvers) == GOOD){
-                lispd_log_msg(LISP_LOG_DEBUG_1, "Added %s to map-resolver list", map_resolver);
+                lispd_log_msg(LISP_LOG_DEBUG_1, "Added %s to map-resolver list", map_resolver );
             }else{
                 lispd_log_msg(LISP_LOG_CRIT,"Can't add %s Map Resolver.",map_resolver);
             }
@@ -807,7 +807,7 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
 /*
  *  add_database_mapping
  *
- *  Get a single database mapping 
+ *  Get a single database mapping
  *
  *  David Meyer <dmm@1-4-5.net>
  *  Preethi Natarajan <prenatar@cisco.com>

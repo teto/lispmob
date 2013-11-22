@@ -26,7 +26,40 @@ static void lispd_log_to_console(
 //    printf("1st arg %s\n", va_arg(args,char*));
 
     for ( i = 0; i < nb; ++i){
-        printf("%s", va_arg(args,char*));
+
+        //
+        char* str= va_arg(args,char*);
+
+        // check for length ?
+        if( str[0] == 0 ){
+            continue;
+        }
+        else if ( str[0] != '%') {
+            printf("%s", str);
+            continue;
+        }
+
+        switch( str[1] ){
+            case 0:
+                printf("Warning You shouldn't have a  on its own");
+                continue;
+
+            // RLOC
+            case 'R':
+                // TODO consume argument and increase ++i
+                {
+                    char* rloc = va_arg(args,char*);
+                    ++i;
+                    printf("[POC rloc:%s]", rloc);
+                }
+                continue;
+//            case 'r':
+//            case '':
+            default:
+                break;
+                // TODO sprintf
+
+        }
     }
 /*
     switch (lisp_log_level){
@@ -100,8 +133,9 @@ static void lispd_log_to_console(
 lispd_log_ops_t log_console_ops = {
     .start_log = NULL,
     .close_log = NULL,
-    .log = &lispd_log_to_console,
-    .preprocess_item = NULL
+    .log = &lispd_log_to_console
+
+//    .preprocess_item = NULL
 };
 
 

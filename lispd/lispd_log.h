@@ -40,17 +40,37 @@
 //int "%eid" = 0;
 //int "%  " = 0;
 
+typedef enum {
+col_default,    /* used to reset colors */
+col_eid,
+col_rloc,
+col_port,
+col_mask,
+col_filename,
+col_interface,
+col_crit,
+col_warning,
+col_debug,
+//col_LISP_LOG_DEBUG_2,
+//col_LISP_LOG_DEBUG_3,
+col_info,
+col_err,
+col_mapserver,
+col_mapresolver,
+col_last
+} lispd_log_item_type_t ;
+
 #ifdef LISPD_ENABLE_PREPROCESSING
     #define LISPD_EID( ip )  logger.preprocess_item(col_eid, ip)
-    #define LISPD_RLOC( ip )  "|0", ip
+    #define LISPD_RLOC( ip )  "%R", ip
 //    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
 //    #define LISPD_MASK( mask)  lispd_color_output( 0, mask,  col_port)
     #define LISPD_PORT( port )  (port)
     #define LISPD_MASK( mask)   (mask)
     #define LISPD_FILENAME( filename )  lispd_color_output(filename , 0, col_filename)
     #define LISPD_IFNAME( if_name) if_name
-    #define LISPD_MAPSERVER( ip ) LISPD_RLOC( ip)
-    #define LISPD_MAPRESOLVER( ip ) LISPD_RLOC( ip)
+    #define LISPD_MS( ip ) LISPD_RLOC( ip)
+    #define LISPD_MR( ip ) LISPD_RLOC( ip)
     #define LISPD_PETR( host ) LISPD_RLOC(host)
     #define LISPD_PITR( host ) LISPD_RLOC(host)
     #define LISPD_LOG_DESCRIPTOR( descriptor ) lispd_color_output(descriptor.log_name , 0, descriptor.color )
@@ -89,33 +109,13 @@ LISP_LOG_DEBUG_3             /* high debug-level messages -> Log for each receiv
 } lispd_log_level_t;
 
 
-typedef enum {
-col_default,    /* used to reset colors */
-col_eid,
-col_rloc,
-col_port,
-col_mask,
-col_filename,
-col_interface,
-col_crit,
-col_warning,
-col_debug,
-//col_LISP_LOG_DEBUG_2,
-//col_LISP_LOG_DEBUG_3,
-col_info,
-col_err,
-col_mapserver,
-col_mapresolver,
-col_last
-} lispd_log_item_type_t ;
+
 
 typedef struct  {
 int (*start_log)(const char *data);     /* data passed on via cli or config file */
 int (*close_log)(void *data);
 void (*log)(const lispd_log_level_t lispd_log_level, ...);
-const char* (*preprocess_item)( const lispd_log_item_type_t type, void *data);
-//const char* (*preprocess_str)( );
-//void *data;
+//const char* (*preprocess_item)( const lispd_log_item_type_t type, void *data);
 } lispd_log_ops_t;
 
 /** KEPT for retrocompatibility, remove once the new logger is ok **/

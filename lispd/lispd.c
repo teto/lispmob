@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 #else
     LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node\n");
 #endif
-
+    LISPD_LOG(LISP_LOG_INFO,"test rloc", LISPD_RLOC("mon rloc"),"\n");
 
     /*
      *  Check for superuser privileges
