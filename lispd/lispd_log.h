@@ -64,7 +64,7 @@ col_last
 /* http://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/
 replace 0 by empty or not */
 #define _ARG16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, ...) _15
-#define HAS_COMMA(...) _ARG16(__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+#define HAS_COMMA(...) _ARG16(__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
 #define _TRIGGER_PARENTHESIS_(...) ,
 
 #define ISEMPTY(...)                                                    \
@@ -92,7 +92,7 @@ _ISEMPTY(                                                               \
 // TODO if there is an empty parameter, then the next one is already expanded
 #ifdef LISPD_ENABLE_PREPROCESSING
     #define LISPD_EID( ip )  ,logger.append_to_entry(entry, col_eid, ip)
-    #define LISPD_RLOC( ip ) lispd_logger.append_to_entry(entry, col_rloc, ip)
+    #define LISPD_RLOC( ip ) ,lispd_logger.append_to_entry(entry, col_rloc, ip,0,0)
 //    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
 //    #define LISPD_MASK( mask)  lispd_color_output( 0, mask,  col_port)
     #define LISPD_PORT( port )  (port)
@@ -120,7 +120,7 @@ _ISEMPTY(                                                               \
 
 
 /* Used to count the number of arguments (up to 10 arguments, update the macros if you need more) */
-#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,3,2,1)
+#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 9,8,7,6,5,4,3,2,1)
 #define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5, _6, _7, _8, _9, N,...) N
 
 
@@ -135,17 +135,19 @@ _ISEMPTY(                                                               \
 
 
 /* we should */
-#define LISP_LOG_SEVERAL(arg1,arg2,...) LISP_LOG2(arg1,arg2) LISP_LOG_SEVERAL(arg2,__VA_ARGS__)
+//#define LISP_LOG_SEVERAL(arg1,arg2,...) LISP_LOG2(arg1,arg2) LISP_LOG_SEVERAL(arg2,__VA_ARGS__)
+//#define LISP_LOG (i, ) CONCAT(LISP_LOG)
 
-
+#define LISP_LOG4( arg1, arg2, ... )  LISP_LOG2(arg1,arg2) LISP_LOG3(arg2, __VA_ARGS__)
 #define LISP_LOG3( arg1, arg2, arg3 )  LISP_LOG2(arg1,arg2) LISP_LOG2(arg2,arg3)
 
 /* if arg1 empty, then copy arg2 as is, else consider it as string */
 #define LISP_LOG2( arg1, arg2 )  LISP_LOG2_( ISEMPTY(arg1) , arg1,arg2)
 #define LISP_LOG2_( isempty, arg1, arg2 ) CONCAT(LISP_LOG2_, isempty ) (arg1,arg2)
 
-#define LISP_LOG2_0( arg1, arg2 ) arg2;
-#define LISP_LOG2_1( arg1, arg2 ) LISP_LOG1( arg1 )
+#define LISP_LOG2_0( arg1, arg2 ) LISP_LOG1( arg1 )
+/* if arg1 empty */
+#define LISP_LOG2_1( arg1, arg2 ) arg2
 //LISP_LOG2(arg2, )
 
 /* might be a corner case if str empty ? */

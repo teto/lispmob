@@ -55,7 +55,9 @@ inline void lispd_log(
 
 
 #define MAX_STRING_LENGTH 500
-    #define POOL_SIZE 5
+#define POOL_SIZE 5
+
+
 lispd_log_entry_t lispd_log_new_entry(const lispd_log_level_t log_level)
 {
     /* 1 should be enough */
@@ -70,7 +72,7 @@ lispd_log_entry_t lispd_log_new_entry(const lispd_log_level_t log_level)
     i++;
     i = i % POOL_SIZE;
 
-    return &temp[i];
+    return &(temp[i][0]);
 }
 
 
