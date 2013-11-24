@@ -61,38 +61,21 @@ col_last
 } lispd_log_item_type_t ;
 
 
-/* http://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/
-replace 0 by empty or not */
-#define _ARG16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, ...) _15
-#define HAS_COMMA(...) _ARG16(__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
-#define _TRIGGER_PARENTHESIS_(...) ,
+/* http://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/  */
 
-#define ISEMPTY(...)                                                    \
-_ISEMPTY(                                                               \
-          /* test if there is just one argument, eventually an empty    \
-             one */                                                     \
-          HAS_COMMA(__VA_ARGS__),                                       \
-          /* test if _TRIGGER_PARENTHESIS_ together with the argument   \
-             adds a comma */                                            \
-          HAS_COMMA(_TRIGGER_PARENTHESIS_ __VA_ARGS__),                 \
-          /* test if the argument together with a parenthesis           \
-             adds a comma */                                            \
-          HAS_COMMA(__VA_ARGS__ (/*empty*/)),                           \
-          /* test if placing it between _TRIGGER_PARENTHESIS_ and the   \
-             parenthesis adds a comma */                                \
-          HAS_COMMA(_TRIGGER_PARENTHESIS_ __VA_ARGS__ (/*empty*/))      \
-          )
 
-#define PASTE5(_0, _1, _2, _3, _4) _0 ## _1 ## _2 ## _3 ## _4
-#define _ISEMPTY(_0, _1, _2, _3) HAS_COMMA(PASTE5(_IS_EMPTY_CASE_, _0, _1, _2, _3))
-#define _IS_EMPTY_CASE_0001 ,
-
+#define LISPD_ENTRY_EXPAND( arg1 ) LISPD_ENTRY_EXPAND_( STRIP_PARENS(arg1))
+// TODO rearranger l'ordre ici
+#define LISPD_ENTRY_EXPAND_(...) LISPD_ENTRY_EXPAND_I( __VA_ARGS__, col_default,0,0)
+#define LISPD_ENTRY_EXPAND_I( str, item_type , int, data, ...)  item_type, str, int , data
+//lispd_logger.append_to_entry( entry, str, item_type , int, data );
 
 
 // TODO if there is an empty parameter, then the next one is already expanded
 #ifdef LISPD_ENABLE_PREPROCESSING
-    #define LISPD_EID( ip )  ,logger.append_to_entry(entry, col_eid, ip)
-    #define LISPD_RLOC( ip ) ,lispd_logger.append_to_entry(entry, col_rloc, ip,0,0)
+    #define LISPD_EID( ip )  (col_eid, ip) )
+//    #define LISPD_RLOC( ip ) (,lispd_logger.append_to_entry(entry, col_rloc, ip,0,0))
+    #define LISPD_RLOC( ip ) (ip, col_rloc, 0,0)
 //    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
 //    #define LISPD_MASK( mask)  lispd_color_output( 0, mask,  col_port)
     #define LISPD_PORT( port )  (port)
@@ -119,13 +102,45 @@ _ISEMPTY(                                                               \
 #endif
 
 
+//#define CAT(x, y) CAT_I(x, y)
+//#define CAT_I(x, y) x ## y
+
+#define APPLY(macro, args) APPLY_I(macro, args)
+#define APPLY_I(macro, args) macro args
+
+// Here is the key : if x has no parenthesis then the STRIP_PARENS_I is a string, and no macro is called
+#define STRIP_PARENS(x) EVAL( (REPLACE_IF_MULTIPLE_ARGS x), x)
+#define REPLACE_IF_MULTIPLE_ARGS(...) 1,1
+
+#define EVAL(args, x) EVAL_I( args, x)
+//#define EVAL(args, x)  args, x
+//#define EVAL_I(args, x) args
+#define EVAL_I(args, x) MAYBE_STRIP_PARENS( VA_NUM_1_OR_SEVERAL args, x)
+
+//#define TEST_ARITY(...) APPLY(TEST_ARITY_I, (__VA_ARGS__, 2, 1))
+//#define TEST_ARITY_I(a,b,c,...) c
+
+#define MAYBE_STRIP_PARENS( one_or_several, x) MAYBE_STRIP_PARENS_I(one_or_several, x)
+//#define MAYBE_STRIP_PARENS( one_or_several, x) one_or_several, x
+#define MAYBE_STRIP_PARENS_I(one_or_several, x) CONCAT(MAYBE_STRIP_PARENS, one_or_several)(x)
+
+#define MAYBE_STRIP_PARENS1(x) x
+#define MAYBE_STRIP_PARENS_SEVERAL(x) MAYBE_STRIP_PARENS_SEVERAL_I x
+#define MAYBE_STRIP_PARENS_SEVERAL_I(...) __VA_ARGS__
+
+//STRIP_PARENS(this is a test)
+//STRIP_PARENS((a,b,c))
+
+
 /* Used to count the number of arguments (up to 10 arguments, update the macros if you need more) */
 #define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 9,8,7,6,5,4,3,2,1)
+#define VA_NUM_1_OR_SEVERAL(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,1)
 #define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5, _6, _7, _8, _9, N,...) N
 
 
 
 #define CONCAT(a, b) a##b
+
 
 /* Should not be called like this */
 #define LISP_LOG0( level, ...)  "Needs format"
@@ -138,28 +153,23 @@ _ISEMPTY(                                                               \
 //#define LISP_LOG_SEVERAL(arg1,arg2,...) LISP_LOG2(arg1,arg2) LISP_LOG_SEVERAL(arg2,__VA_ARGS__)
 //#define LISP_LOG (i, ) CONCAT(LISP_LOG)
 
-#define LISP_LOG4( arg1, arg2, ... )  LISP_LOG2(arg1,arg2) LISP_LOG3(arg2, __VA_ARGS__)
-#define LISP_LOG3( arg1, arg2, arg3 )  LISP_LOG2(arg1,arg2) LISP_LOG2(arg2,arg3)
+#define LISP_LOG5( arg1, ... )  LISP_LOG1(arg1) LISP_LOG4( __VA_ARGS__)
+#define LISP_LOG4( arg1, ... )  LISP_LOG1(arg1) LISP_LOG3( __VA_ARGS__)
+#define LISP_LOG3( arg1, ... )  LISP_LOG1(arg1) LISP_LOG2(__VA_ARGS__)
+#define LISP_LOG2( arg1, arg2 )  LISP_LOG1(arg1) LISP_LOG1(arg2)
 
-/* if arg1 empty, then copy arg2 as is, else consider it as string */
-#define LISP_LOG2( arg1, arg2 )  LISP_LOG2_( ISEMPTY(arg1) , arg1,arg2)
-#define LISP_LOG2_( isempty, arg1, arg2 ) CONCAT(LISP_LOG2_, isempty ) (arg1,arg2)
-
-#define LISP_LOG2_0( arg1, arg2 ) LISP_LOG1( arg1 )
-/* if arg1 empty */
-#define LISP_LOG2_1( arg1, arg2 ) arg2
-//LISP_LOG2(arg2, )
-
-/* might be a corner case if str empty ? */
-#define LISP_LOG1( str )    lispd_logger.append_to_entry(entry,col_default, str, 0, 0);
-//LISP_LOG_FINAL((lispd_log_level),  "%s: " format, __func__)
+/* if arg1 empty, then copy arg2 as is, else consider it as string
+TODO strip parenthesis
+append_entry( COMPLETE(strip parenthesis(arg1))( )
+*/
+#define LISP_LOG1( arg1 ) lispd_logger.append_to_entry(entry, LISPD_ENTRY_EXPAND( arg1) );
 
 // appele avant
 /* last argument is empty */
 #define LISPD_LOG( lispd_log_level,  ... )  do { \
                                                                lispd_log_entry_t entry = lispd_logger.new_entry(lispd_log_level); \
                                                                if( !entry ) break; \
-                                                              LISPD_CALL_ADEQUATE_LOG( VA_NUM_ARGS(__VA_ARGS__,) , __VA_ARGS__,) \
+                                                              LISPD_CALL_ADEQUATE_LOG( VA_NUM_ARGS(__VA_ARGS__) , __VA_ARGS__) \
                                                             lispd_logger.close_entry(entry); \
                                                         } while(0)
 
@@ -175,7 +185,8 @@ _ISEMPTY(                                                               \
 /* to verify preprocessor output, run the preprocessor alone (g++ -E lispd.c for instance): */
 //#define LISPD_LOG( lispd_log_level, ...)   lispd_logger.log( lispd_log_level, VA_NUM_ARGS(__VA_ARGS__) ,  __VA_ARGS__)
 
-
+#define MAX_STRING_LENGTH 500
+#define POOL_SIZE 5
 
 
 typedef enum {

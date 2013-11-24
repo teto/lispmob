@@ -134,16 +134,27 @@ static void lispd_log_to_console(
 void lispd_log_console_close_entry(lispd_log_entry_t entry)
 {
     // Nothing to do
+    printf("%s\n", entry);
 }
 
 void lispd_log_console_append_to_entry(lispd_log_entry_t entry, const lispd_log_item_type_t type, char* str, int integer, void *data)
 {
-    if (type == col_default) {
-        printf("Param [%s]", str);
-        return;
+    switch (type) {
+
+        case col_default:
+            //
+            strncat( entry, str, MAX_STRING_LENGTH-strnlen(entry,MAX_STRING_LENGTH) );
+            return;
+
+        case col_rloc:
+            snprintf( entry, MAX_STRING_LENGTH-strnlen(entry,MAX_STRING_LENGTH)  ,"rloc [%s]", str);
+            return;
+
+        default:
+            printf("Unsupported type %d", type);
     }
 
-    printf("Unsupported type %d", type);
+
 }
 
 

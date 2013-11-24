@@ -54,8 +54,7 @@ inline void lispd_log(
         va_list     args);
 
 
-#define MAX_STRING_LENGTH 500
-#define POOL_SIZE 5
+
 
 
 lispd_log_entry_t lispd_log_new_entry(const lispd_log_level_t log_level)
