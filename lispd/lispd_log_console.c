@@ -4,11 +4,11 @@
 
 /* styles */
 typedef enum {
-style_plain = 0,
-style_bold = 1,
-style_faint = 2,
-style_italic = 3,
-style_underline = 4
+    style_plain = 0,
+    style_bold = 1,
+    style_faint = 2,
+    style_italic = 3,
+    style_underline = 4
 } text_style_t;
 
 typedef struct {
@@ -22,14 +22,14 @@ typedef struct {
 
 
 typedef enum {
-lispd_color_black      = 0,
-lispd_color_red,
-lispd_color_green,
-lispd_color_yellow,
-lispd_color_blue,
-lispd_color_magenta,
-lispd_color_cyan,
-lispd_color_white
+    lispd_color_black      = 0,
+    lispd_color_red,
+    lispd_color_green,
+    lispd_color_yellow,
+    lispd_color_blue,
+    lispd_color_magenta,
+    lispd_color_cyan,
+    lispd_color_white
 } lispd_color_t;
 
 
@@ -66,11 +66,20 @@ color_set_t color_sets[lispd_item_last] = {
 
 
 
+static char* eol[2] = {
+"\n",
+"\033[0m\n"
+};
+
+#ifdef LISPD_ENABLE_COLORS
+    #define LISPD_LOG_EOL entry->enable_color
+#else
+    #define LISPD_LOG_EOL 0
+#endif
 
 static void lispd_log_console_close_entry(lispd_log_entry_t *entry)
 {
-    // Nothing to do reset bg to its original value ?
-    printf("%s\n", entry->str);
+    printf("%s%s", entry->str, eol[LISPD_LOG_EOL] );
 }
 
 #define COLOR_SET_FORMAT "\e[%d;%dm\e[%dm"
@@ -81,7 +90,7 @@ static void lispd_log_console_close_entry(lispd_log_entry_t *entry)
 #ifdef LISPD_ENABLE_COLORS
     #define CAT(x,y) x y
     #define LISPD_APPEND_TO_STR( format, value) do {if(entry->enable_color)  \
-                                                    LISPD_APPEND_TO_ENTRY_FINAL( "\e[%d;%dm\e[%dm" "%s" , EXPAND_COLOR_SET( *cs ) , value ) \
+                                                    LISPD_APPEND_TO_ENTRY_FINAL( "\e[%d;%dm\e[%dm" format , EXPAND_COLOR_SET( *cs ) , value ) \
                                                  else  \
                                                     LISPD_APPEND_TO_ENTRY_FINAL( (format), value ) \
                                                 } while(0)
@@ -102,6 +111,17 @@ static void lispd_log_console_append_to_entry(lispd_log_entry_t *entry, const li
     char *startingPoint = &(entry->str[usedLen]);
 
     switch (type) {
+        case lispd_item_integer:
+            LISPD_APPEND_TO_STR( "%d", integer );
+            break;
+
+        case lispd_item_warning:
+        case lispd_item_info:
+        case lispd_item_crit:
+        case lispd_item_err:
+        case lispd_item_debug:
+            LISPD_APPEND_TO_STR( "%s: ", str );
+            break;
 
         default:
             LISPD_APPEND_TO_STR( "%s", str );
@@ -126,7 +146,7 @@ static lispd_log_entry_t* lispd_log_console_get_entry(const lispd_log_level_t lo
     i++;
     i = i % POOL_SIZE;
     entry = &temp[i];
-
+    entry->str[0] = '\0';
     entry->log_descriptor = lispd_log_get_level_descriptor( log_level );
 
     entry->log_level = log_level;

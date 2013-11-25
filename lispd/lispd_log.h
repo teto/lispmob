@@ -39,6 +39,7 @@
 
 #define MAX_STRING_LENGTH 500
 #define POOL_SIZE 5
+#define LISPD_DEBUG 1
 
 
 typedef enum {
@@ -52,6 +53,7 @@ lispd_item_interface,
 lispd_item_crit,
 lispd_item_warning,
 lispd_item_debug,
+lispd_item_integer,
 //lispd_item_LISP_LOG_DEBUG_2,
 //lispd_item_LISP_LOG_DEBUG_3,
 lispd_item_info,
@@ -73,6 +75,7 @@ lispd_item_last     /* always keep it last, used as counter */
 
 // TODO if there is an empty parameter, then the next one is already expanded
 
+#define LISPD_INTEGER( integer )  ( 0,lispd_item_integer, integer, 0)
 #define LISPD_EID( ip )  (ip,lispd_item_eid, 0, 0)
 #define LISPD_RLOC( ip ) (ip, lispd_item_rloc, 0,0)
 //    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
@@ -111,15 +114,27 @@ lispd_item_last     /* always keep it last, used as counter */
 
 
 /* Used to count the number of arguments (up to 10 arguments, update the macros if you need more) */
-#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 9,8,7,6,5,4,3,2,1)
-#define VA_NUM_1_OR_SEVERAL(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,1)
-#define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5, _6, _7, _8, _9, N,...) N
+#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1)
+#define VA_NUM_1_OR_SEVERAL(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, \
+                            _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL, \
+                            _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL, \
+                            _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL, \
+                            _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL, \
+                            1)
+#define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,N,...) N
 
 
 
 #define CONCAT(a, b) a##b
 
 /* Add more if needed */
+#define LISP_LOG17( arg1, ... )  LISP_LOG1(arg1) LISP_LOG16( __VA_ARGS__)
+#define LISP_LOG16( arg1, ... )  LISP_LOG1(arg1) LISP_LOG15( __VA_ARGS__)
+#define LISP_LOG15( arg1, ... )  LISP_LOG1(arg1) LISP_LOG14( __VA_ARGS__)
+#define LISP_LOG14( arg1, ... )  LISP_LOG1(arg1) LISP_LOG13( __VA_ARGS__)
+#define LISP_LOG13( arg1, ... )  LISP_LOG1(arg1) LISP_LOG12( __VA_ARGS__)
+#define LISP_LOG12( arg1, ... )  LISP_LOG1(arg1) LISP_LOG11( __VA_ARGS__)
+#define LISP_LOG11( arg1, ... )  LISP_LOG1(arg1) LISP_LOG10( __VA_ARGS__)
 #define LISP_LOG10( arg1, ... )  LISP_LOG1(arg1) LISP_LOG9( __VA_ARGS__)
 #define LISP_LOG9( arg1, ... )  LISP_LOG1(arg1) LISP_LOG8( __VA_ARGS__)
 #define LISP_LOG8( arg1, ... )  LISP_LOG1(arg1) LISP_LOG7( __VA_ARGS__)
@@ -134,8 +149,14 @@ lispd_item_last     /* always keep it last, used as counter */
 /* Should not be called like this */
 #define LISP_LOG0( level, ...)  "Needs format"
 
-/* last argument is empty */
-#define LISPD_LOG( lispd_log_level,  ... )  do { \
+/* last argument is empty __LINE__*/
+#ifdef LISPD_DEBUG
+    #define LISPD_LOG(level, ...) LISPD_LOG_FINAL(level, __func__, ":" , __VA_ARGS__ )
+#else
+    #define LISPD_LOG(level, ...) LISPD_LOG_FINAL(level, __VA_ARGS__ )
+#endif
+
+#define LISPD_LOG_FINAL( lispd_log_level,  ... )  do { \
                                                lispd_log_entry_t *entry = lispd_logger.new_entry(lispd_log_level); \
                                                if( !entry ) break; \
                                               LISPD_CALL_ADEQUATE_LOG( VA_NUM_ARGS(__VA_ARGS__) , __VA_ARGS__) \

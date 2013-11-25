@@ -151,8 +151,6 @@ int main(int argc, char **argv)
 #else
     LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node");
 #endif
-//    LISPD_LOG(LISP_LOG_INFO,"test rloc");
-    LISPD_LOG(LISP_LOG_INFO,"Here comes the rloc",LISPD_RLOC("mon rloc"),LISPD_EID("mon eid"),"plop");
 
     /*
      *  Check for superuser privileges
@@ -505,7 +503,7 @@ void exit_cleanup(void) {
     close_output_sockets();
     /* Close netlink socket */
     close(netlink_fd);
-    LISPD_LOG(LISP_LOG_INFO,"Exiting ...\n");
+    LISPD_LOG(LISP_LOG_INFO,"Exiting ...");
 
     exit(EXIT_SUCCESS);
 }
