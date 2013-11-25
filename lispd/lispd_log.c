@@ -35,10 +35,21 @@
 #include <syslog.h>
 #include <stdarg.h>
 
+
+static lispd_log_descriptor_t lispd_log_descriptors[LISP_LOG_DEBUG_3 + 1] =
+{
+[LISP_LOG_CRIT] = { "CRIT", LOG_CRIT , lispd_item_crit },
+[LISP_LOG_WARNING] = { "WARNING", LOG_WARNING, lispd_item_warning },
+[LISP_LOG_INFO] = { "INFO", LOG_INFO, lispd_item_info },
+[LISP_LOG_ERR] = { "ERR", LOG_ERR, lispd_item_err },
+[LISP_LOG_DEBUG_1] = { "DEBUG", LOG_DEBUG, lispd_item_debug },
+[LISP_LOG_DEBUG_2] = { "DEBUG-2", LOG_DEBUG, lispd_item_debug },
+[LISP_LOG_DEBUG_3] = { "DEBUG-3", LOG_DEBUG, lispd_item_debug }
+};
+
 /*
  * True if log_level is enough to print results
  */
-
 int is_loggable (int log_level){
     if (log_level < LISP_LOG_DEBUG_1)
         return (TRUE);
@@ -47,9 +58,14 @@ int is_loggable (int log_level){
     return (FALSE);
 }
 
+const lispd_log_descriptor_t lispd_log_get_level_descriptor(const lispd_log_level_t log_level)
+{
+    return lispd_log_descriptors[ log_level ];
+}
+
+
 inline void lispd_log(
-        int         log_level,
-        char        *log_name,
+        const lispd_log_descriptor_t lispd_log_level,
         const char  *format,
         va_list     args);
 
@@ -57,101 +73,85 @@ inline void lispd_log(
 
 
 
-lispd_log_entry_t lispd_log_new_entry(const lispd_log_level_t log_level)
-{
-    /* 1 should be enough */
-
-
-    static char temp[POOL_SIZE][ MAX_STRING_LENGTH ];
-    static unsigned int i = 0; //XXX Too much memory allocation for this, but standard syntax
-
-    if (! is_loggable(log_level))   return 0;
-
-    /* Hack to allow more than one addresses per printf line. Now maximum = 5 */
-    i++;
-    i = i % POOL_SIZE;
-
-    return &(temp[i][0]);
-}
-
-
 void lispd_log_msg(
         const lispd_log_level_t lisp_log_level, const char *format, ...)
 {
     va_list args;
-    char *log_name; /* To store the log level in string format for printf output */
-    int log_level;
+//    char *log_name; /* To store the log level in string format for printf output */
+//    int log_level;
 
 
     va_start (args, format);
-
-    switch (lisp_log_level){
-    case LISP_LOG_CRIT:
-        log_name = "CRIT";
-        log_level = LOG_CRIT;
-        lispd_log(log_level, log_name, format, args);
-        break;
-    case LISP_LOG_ERR:
-        log_name = "ERR";
-        log_level = LOG_ERR;
-        lispd_log(log_level, log_name, format, args);
-        break;
-    case LISP_LOG_WARNING:
-        log_name = "WARNING";
-        log_level = LOG_WARNING;
-        lispd_log(log_level, log_name, format, args);
-        break;
-    case LISP_LOG_INFO:
-        log_name = "INFO";
-        log_level = LOG_INFO;
-        lispd_log(log_level, log_name, format, args);
-        break;
-    case LISP_LOG_DEBUG_1:
-        if (debug_level > 0){
-            log_name = "DEBUG";
-            log_level = LOG_DEBUG;
-            lispd_log(log_level, log_name, format, args);
-        }
-        break;
-    case LISP_LOG_DEBUG_2:
-        if (debug_level > 1){
-            log_name = "DEBUG-2";
-            log_level = LOG_DEBUG;
-            lispd_log(log_level, log_name, format, args);
-        }
-        break;
-    case LISP_LOG_DEBUG_3:
-        if (debug_level > 2){
-            log_name = "DEBUG-3";
-            log_level = LOG_DEBUG;
-            lispd_log(log_level, log_name, format, args);
-        }
-        break;
-    default:
-        log_name = "LOG";
-        log_level = LOG_INFO;
-        lispd_log(log_level, log_name, format, args);
-        break;
-    }
+    lispd_log( lispd_log_descriptors[lisp_log_level], format,  args);
+//    switch (lisp_log_level){
+//    case LISP_LOG_CRIT:
+//        log_name = "CRIT";
+//        log_level = LOG_CRIT;
+//        lispd_log(log_level, log_name, format, args);
+//        break;
+//    case LISP_LOG_ERR:
+//        log_name = "ERR";
+//        log_level = LOG_ERR;
+//        lispd_log(log_level, log_name, format, args);
+//        break;
+//    case LISP_LOG_WARNING:
+//        log_name = "WARNING";
+//        log_level = LOG_WARNING;
+//        lispd_log(log_level, log_name, format, args);
+//        break;
+//    case LISP_LOG_INFO:
+//        log_name = "INFO";
+//        log_level = LOG_INFO;
+//        lispd_log(log_level, log_name, format, args);
+//        break;
+//    case LISP_LOG_DEBUG_1:
+//        if (debug_level > 0){
+//            log_name = "DEBUG";
+//            log_level = LOG_DEBUG;
+//            lispd_log(log_level, log_name, format, args);
+//        }
+//        break;
+//    case LISP_LOG_DEBUG_2:
+//        if (debug_level > 1){
+//            log_name = "DEBUG-2";
+//            log_level = LOG_DEBUG;
+//            lispd_log(log_level, log_name, format, args);
+//        }
+//        break;
+//    case LISP_LOG_DEBUG_3:
+//        if (debug_level > 2){
+//            log_name = "DEBUG-3";
+//            log_level = LOG_DEBUG;
+//            lispd_log(log_level, log_name, format, args);
+//        }
+//        break;
+//    default:
+//        log_name = "LOG";
+//        log_level = LOG_INFO;
+//        lispd_log(log_level, log_name, format, args);
+//        break;
+//    }
 
     va_end (args);
 }
 
 inline void lispd_log(
-        int         log_level,
-        char        *log_name,
+        const lispd_log_descriptor_t log_descriptor,
         const char  *format,
-        va_list     args)
+        va_list     args
+        )
 {
     if (daemonize){
-        vsyslog(log_level,format,args);
+        vsyslog( log_descriptor.syslog_log_level , format, args);
     }else{
-        printf("%s: ",log_name);
-        vfprintf(stdout,format,args);
+
+        // Reorder instruction
+
+        printf("%s: ", log_descriptor.log_name );
+        vfprintf(stdout, format, args);
         printf("\n");
     }
 }
-
 
 /*
  * Editor modelines

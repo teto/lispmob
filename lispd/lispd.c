@@ -149,18 +149,17 @@ int main(int argc, char **argv)
     lispd_log_msg(LISP_LOG_INFO,"LISPmob compiled for linux xTR\n");
 #endif
 #else
-    LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node\n");
+    LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node");
 #endif
-    LISPD_LOG(LISP_LOG_INFO,"test rloc");
-    LISPD_LOG(LISP_LOG_INFO,LISPD_RLOC("mon rloc"),"\n");
+//    LISPD_LOG(LISP_LOG_INFO,"test rloc");
+    LISPD_LOG(LISP_LOG_INFO,"Here comes the rloc",LISPD_RLOC("mon rloc"),LISPD_EID("mon eid"),"plop");
 
     /*
      *  Check for superuser privileges
      */
 
     if (geteuid()) {
-    //",LISPD,"
-        LISPD_LOG(LISP_LOG_INFO,"Running requires superuser privileges! Exiting...\n");
+        LISPD_LOG(LISP_LOG_CRIT,"Running requires superuser privileges! Exiting...\n");
         exit_cleanup();
     }
 
