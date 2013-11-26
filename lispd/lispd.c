@@ -1,9 +1,9 @@
 /*
- * lispd.c
+ * lispd.c 
  *
  * This file is part of LISP Mobile Node Implementation.
  * lispd Implementation
- *
+ * 
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -55,7 +55,6 @@
 #include "lispd_lib.h"
 #include "lispd_local_db.h"
 #include "lispd_log.h"
-#include "lispd_log_console.h"
 #include "lispd_map_cache_db.h"
 #include "lispd_map_register.h"
 #include "lispd_map_request.h"
@@ -135,12 +134,11 @@ int     timers_fd                       = 0;
 
 
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) 
 {
     lisp_addr_t *tun_v4_addr;
     lisp_addr_t *tun_v6_addr;
     char *tun_dev_name = TUN_IFACE_NAME;
-    lispd_logger = log_console_ops;
 
 #ifdef ROUTER
 #ifdef OPENWRT
@@ -149,15 +147,16 @@ int main(int argc, char **argv)
     lispd_log_msg(LISP_LOG_INFO,"LISPmob compiled for linux xTR\n");
 #endif
 #else
-    LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node");
+    lispd_log_msg(LISP_LOG_INFO,"LISPmob compiled for mobile node\n");
 #endif
+
 
     /*
      *  Check for superuser privileges
      */
 
     if (geteuid()) {
-        LISPD_LOG(LISP_LOG_CRIT,"Running requires superuser privileges! Exiting...\n");
+        lispd_log_msg(LISP_LOG_INFO,"Running %s requires superuser privileges! Exiting...\n", LISPD);
         exit_cleanup();
     }
 
@@ -393,11 +392,11 @@ void event_loop()
     int    max_fd;
     fd_set readfds;
     int    retval;
-
+    
     /*
      *  calculate the max_fd for select.
      */
-
+    
     max_fd = ipv4_data_input_fd;
     max_fd = (max_fd > ipv6_data_input_fd)      ? max_fd : ipv6_data_input_fd;
     max_fd = (max_fd > ipv4_control_input_fd)   ? max_fd : ipv4_control_input_fd;
@@ -415,7 +414,7 @@ void event_loop()
         FD_SET(ipv6_control_input_fd, &readfds);
         FD_SET(timers_fd, &readfds);
         FD_SET(netlink_fd, &readfds);
-
+        
         retval = have_input(max_fd, &readfds);
         if (retval == -1) {
             break;           /* doom */
@@ -423,7 +422,7 @@ void event_loop()
         if (retval == BAD) {
             continue;        /* interrupted */
         }
-
+        
         if (FD_ISSET(ipv4_data_input_fd, &readfds)) {
             //lispd_log_msg(LISP_LOG_DEBUG_3,"Received input IPv4 packet");
             process_input_packet(ipv4_data_input_fd, AF_INET, tun_receive_fd);
@@ -503,7 +502,7 @@ void exit_cleanup(void) {
     close_output_sockets();
     /* Close netlink socket */
     close(netlink_fd);
-    LISPD_LOG(LISP_LOG_INFO,"Exiting ...");
+    lispd_log_msg(LISP_LOG_INFO,"Exiting ...");
 
     exit(EXIT_SUCCESS);
 }

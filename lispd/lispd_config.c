@@ -5,7 +5,7 @@
  * Handle lispd command line and config file
  * Parse command line args using gengetopt.
  * Handle config file with libconfuse.
- *
+ * 
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -418,11 +418,11 @@ int handle_uci_lispd_config_file(char *uci_conf_file_path) {
     }
 
     if (debug_level == 1){
-        lispd_log_msg (LISP_LOG_INFO, "Log level: Low debug");
+        lispd_log_msg (LISP_LOG_INFO, "Log levet: Low debug");
     }else if (debug_level == 2){
-        lispd_log_msg (LISP_LOG_INFO, "Log level: Medium debug");
+        lispd_log_msg (LISP_LOG_INFO, "Log levet: Medium debug");
     }else if (debug_level == 3){
-        lispd_log_msg (LISP_LOG_INFO, "Log level: High Debug ");
+        lispd_log_msg (LISP_LOG_INFO, "Log levet: High Debug ");
     }
 
     lispd_log_msg (LISP_LOG_DEBUG_1, "****** Summary of the configuration ******");
@@ -546,7 +546,7 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
     ret = cfg_parse(cfg, lispdconf_conf_file);
 
     if (ret == CFG_FILE_ERROR) {
-        lispd_log_msg(LISP_LOG_CRIT, "Couldn't find config file ", config_file, "exiting..." );
+        lispd_log_msg(LISP_LOG_CRIT, "Couldn't find config file %s, exiting...", config_file);
         exit_cleanup();
     } else if(ret == CFG_PARSE_ERROR) {
         lispd_log_msg(LISP_LOG_CRIT, "Parse error in file %s, exiting. Check conf file (see lispd.conf.example)", config_file);
@@ -630,9 +630,9 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
     for(i = 0; i < n; i++) {
         if ((map_resolver = cfg_getnstr(cfg, "map-resolver", i)) != NULL) {
             if (add_server(map_resolver, &map_resolvers) == GOOD){
-                LISPD_LOG(LISP_LOG_DEBUG_1, "Added ", LISPD_MR(map_resolver), " to map-resolver list"  );
+                lispd_log_msg(LISP_LOG_DEBUG_1, "Added %s to map-resolver list", map_resolver);
             }else{
-                LISPD_LOG(LISP_LOG_CRIT,"Can't add ", LISPD_MR(map_resolver), " Map Resolver.");
+                lispd_log_msg(LISP_LOG_CRIT,"Can't add %s Map Resolver.",map_resolver);
             }
         }
     }
@@ -807,7 +807,7 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
 /*
  *  add_database_mapping
  *
- *  Get a single database mapping
+ *  Get a single database mapping 
  *
  *  David Meyer <dmm@1-4-5.net>
  *  Preethi Natarajan <prenatar@cisco.com>
@@ -873,7 +873,7 @@ int add_database_mapping(
 
 
     if (if_nametoindex(iface_name) == 0) {
-        LISPD_LOG(LISP_LOG_ERR, "Configuration file: INVALID INTERFACE or not initialized virtual interface: ", LISPD_IFNAME(iface_name) );
+        lispd_log_msg(LISP_LOG_ERR, "Configuration file: INVALID INTERFACE or not initialized virtual interface: %s ", iface_name);
     }
 
     /*
@@ -884,7 +884,7 @@ int add_database_mapping(
     {
         mapping = new_local_mapping(eid_prefix,eid_prefix_length,iid);
         if (mapping == NULL){
-            lispd_log_msg(LISP_LOG_ERR,"Configuration file: mapping ", LISPD_EID(eid), " could not be added");
+            lispd_log_msg(LISP_LOG_ERR,"Configuration file: mapping %s could not be added",eid);
             return (BAD);
         }
         /* Add the mapping to the local database */
@@ -914,9 +914,9 @@ int add_database_mapping(
     if (interface == NULL && is_new_mapping == TRUE){
         if (is_new_mapping){
             del_mapping_entry_from_db (mapping->eid_prefix, mapping->eid_prefix_length);
-            LISPD_LOG(LISP_LOG_WARNING,"Couldn't add mapping -> Couldn't create interface");
+            lispd_log_msg(LISP_LOG_WARNING,"add_database_mapping: Couldn't add mapping -> Cudn't create interface");
         }else{
-            LISPD_LOG(LISP_LOG_WARNING,"Couldn't add locator to the mapping -> Couldn't create interface");
+            lispd_log_msg(LISP_LOG_WARNING,"add_database_mapping: Couldn't add locator to the mapping -> Cudn't create interface");
         }
         return (BAD);
     }
@@ -955,7 +955,7 @@ int add_database_mapping(
     }
     /* Recalculate the outgoing rloc vectors */
     if (calculate_balancing_vectors (mapping,&((lcl_mapping_extended_info *)mapping->extended_info)->outgoing_balancing_locators_vecs) != GOOD){
-        LISPD_LOG(LISP_LOG_WARNING,"Couldn't calculate outgoing rloc preference");
+        lispd_log_msg(LISP_LOG_WARNING,"add_database_mapping: Couldn't calculate outgoing rloc prefenernce");
     }
 
 
