@@ -35,7 +35,7 @@
 #include "lispd_output.h"
 #include "lispd_pkt_lib.h"
 #include "lispd_sockets.h"
-#include "lispd_info_nat.h" 
+#include "lispd_info_nat.h"
 
 
 /*
@@ -226,7 +226,7 @@ int encapsulate_packet(
 
     new_packet = (uint8_t *) malloc (original_packet_length + extra_headers_size);
     if (new_packet == NULL){
-        lispd_log_msg(LISP_LOG_WARNING, "encapsulate_packet: Unable to allocate memory for encapsulated packet: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for encapsulated packet: ", strerror(errno));
         return (BAD);
     }
 
@@ -255,7 +255,8 @@ int encapsulate_packet(
     *encap_packet_size = extra_headers_size + original_packet_length;
 
     lispd_log_msg(LISP_LOG_DEBUG_3,"OUTPUT: Encap src: %s | Encap dst: %s\n",
-            get_char_from_lisp_addr_t(*src_addr),get_char_from_lisp_addr_t(*dst_addr));
+            get_char_from_lisp_addr_t(*src_addr),
+            get_char_from_lisp_addr_t(*dst_addr));
 
     return (GOOD);
 }
@@ -373,7 +374,7 @@ int fordward_to_petr(
         return (BAD);
     }
 
-    lispd_log_msg(LISP_LOG_DEBUG_3, "Fordwarded eid %s to petr",get_char_from_lisp_addr_t(extract_dst_addr_from_packet(original_packet)));
+    LISPD_LOG(LISP_LOG_DEBUG_3, "Fordwarded eid ",LISPD_EID( get_char_from_lisp_addr_t(extract_dst_addr_from_packet(original_packet)) )," to petr");
     free (encap_packet );
 
     return (GOOD);
@@ -390,7 +391,7 @@ int forward_to_natt_rtr(
     lcl_locator_extended_info   *extended_info      = NULL;
     lispd_rtr_locators_list     *rtr_locators_list  = NULL;
     int                         output_socket       = 0;
-    
+
     lisp_addr_t                 *src_addr;
     lisp_addr_t                 *dst_addr;
 
@@ -398,14 +399,14 @@ int forward_to_natt_rtr(
     rtr_locators_list = extended_info->rtr_locators_list;
     if (rtr_locators_list == NULL){
         //Could be due to RTR discarded by source afi type
-        lispd_log_msg(LISP_LOG_DEBUG_2,"forward_to_natt_rtr: No RTR for the selected src locator (%s).",
+        lispd_log_msg(LISP_LOG_DEBUG_2,"No RTR for the selected src locator (%s).",
                 get_char_from_lisp_addr_t(*(src_locator->locator_addr)));
         return (BAD);
     }
     src_addr = src_locator->locator_addr;
     dst_addr = &(rtr_locators_list->locator->address);
 
-    lispd_log_msg(LISP_LOG_DEBUG_3, "Forwarding eid %s to NAT RTR",get_char_from_lisp_addr_t(extract_dst_addr_from_packet(original_packet)));
+    lispd_log_msg(LISP_LOG_DEBUG_3, "Forwarding eid %s to NAT RTR ",get_char_from_lisp_addr_t(extract_dst_addr_from_packet(original_packet)));
 
     if (encapsulate_packet(original_packet,
         original_packet_length,
@@ -429,7 +430,7 @@ int forward_to_natt_rtr(
     free (encap_packet );
 
     return (GOOD);
-} 
+}
 
 lisp_addr_t extract_dst_addr_from_packet ( uint8_t *packet )
 {
@@ -599,8 +600,8 @@ int select_src_locators_from_balancing_locators_vec (
     pos = hash%src_vec_len; // if hash = 0 then pos = 0
     *src_locator =  src_loc_vec[pos];
 
-    lispd_log_msg(LISP_LOG_DEBUG_3,"select_src_locators_from_balancing_locators_vec: src RLOC: %s",
-            get_char_from_lisp_addr_t(*((*src_locator)->locator_addr)));
+    LISPD_LOG(LISP_LOG_DEBUG_3,"select_src_locators_from_balancing_locators_vec: src RLOC: ",
+            LISPD_RLOC( get_char_from_lisp_addr_t(*((*src_locator)->locator_addr))) );
 
     return (GOOD);
 }
@@ -642,9 +643,9 @@ int select_src_rmt_locators_from_balancing_locators_vec (
         src_vec_len = src_blv->v4_locators_vec_length;
     }else{
         if (src_blv->v4_balancing_locators_vec == NULL && src_blv->v6_balancing_locators_vec == NULL){
-            lispd_log_msg(LISP_LOG_DEBUG_2,"get_rloc_from_balancing_locator_vec: No src locators available");
+            lispd_log_msg(LISP_LOG_DEBUG_2,"No src locators available");
         }else {
-            lispd_log_msg(LISP_LOG_DEBUG_2,"get_rloc_from_balancing_locator_vec: Source and destination RLOCs have differnet afi");
+            lispd_log_msg(LISP_LOG_DEBUG_2,"Source and destination RLOCs have differnet afi");
         }
         return (BAD);
     }
@@ -671,13 +672,16 @@ int select_src_rmt_locators_from_balancing_locators_vec (
     pos = hash%dst_vec_len;
     *dst_locator =  dst_loc_vec[pos];
 
-    lispd_log_msg(LISP_LOG_DEBUG_3,"select_src_rmt_locators_from_balancing_locators_vec: "
-            "src EID: %s, rmt EID: %s, protocol: %d, src port: %d , dst port: %d --> src RLOC: %s, dst RLOC: %s",
-            get_char_from_lisp_addr_t(src_mapping->eid_prefix),
-            get_char_from_lisp_addr_t(dst_mapping->eid_prefix),
-            tuple.protocol, tuple.src_port, tuple.dst_port,
-            get_char_from_lisp_addr_t(*((*src_locator)->locator_addr)),
-            get_char_from_lisp_addr_t(*((*dst_locator)->locator_addr)));
+    LISPD_LOG(LISP_LOG_DEBUG_3,
+            "src EID: ", LISPD_EID( get_char_from_lisp_addr_t(src_mapping->eid_prefix) ) ,
+            " rmt EID: ", LISPD_EID( get_char_from_lisp_addr_t(dst_mapping->eid_prefix) ) ,
+            " protocol: ", LISPD_INTEGER(tuple.protocol),
+            " src port: ", LISPD_INTEGER( tuple.src_port),
+            " dst port: ", LISPD_INTEGER(tuple.dst_port),
+            " --> src RLOC: ", LISPD_RLOC( get_char_from_lisp_addr_t(*((*src_locator)->locator_addr)) ),
+            " dst RLOC: " ,  LISPD_RLOC(get_char_from_lisp_addr_t(*((*dst_locator)->locator_addr)))
+            )
+            ;
 
     return (GOOD);
 }
@@ -690,7 +694,7 @@ lisp_addr_t *get_default_locator_addr(
 
     lisp_addr_t *addr   = NULL;
 
-    switch(afi){ 
+    switch(afi){
     case AF_INET:
         addr = entry->mapping->head_v4_locators_list->locator->locator_addr;
         break;
@@ -778,8 +782,11 @@ int lisp_output (
         return (BAD);
     }
 
-    lispd_log_msg(LISP_LOG_DEBUG_3,"OUTPUT: Orig src: %s | Orig dst: %s\n",
-            get_char_from_lisp_addr_t(tuple.src_addr),get_char_from_lisp_addr_t(tuple.dst_addr));
+    lispd_log_msg(LISP_LOG_DEBUG_3,"OUTPUT: "
+            "Orig src: ", LISPD_RLOC(get_char_from_lisp_addr_t(tuple.src_addr)) ,
+            " | Orig dst: ",LISPD_RLOC(get_char_from_lisp_addr_t(tuple.dst_addr)) ,
+            "\n"
+            );
 
 
     /* If already LISP packet, do not encapsulate again */
@@ -806,7 +813,7 @@ int lisp_output (
     entry = lookup_map_cache(tuple.dst_addr);
 
     if (entry == NULL){ /* There is no entry in the map cache */
-        lispd_log_msg(LISP_LOG_DEBUG_1, "No map cache retrieved for eid %s",get_char_from_lisp_addr_t(tuple.dst_addr));
+        LISPD_LOG(LISP_LOG_DEBUG_1, "No map cache retrieved for eid ", LISPD_EID(get_char_from_lisp_addr_t(tuple.dst_addr)));
         handle_map_cache_miss(&(tuple.dst_addr), &(tuple.src_addr));
     }
     /* Packets with negative map cache entry, no active map cache entry or no map cache entry are forwarded to PETR */
