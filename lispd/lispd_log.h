@@ -76,8 +76,8 @@ lispd_item_last     /* always keep it last, used as counter */
 // TODO if there is an empty parameter, then the next one is already expanded
 
 #define LISPD_INTEGER( integer )  ( 0,lispd_item_integer, integer, 0)
-#define LISPD_EID( ip )  (ip,lispd_item_eid, 0, 0)
-#define LISPD_RLOC( ip ) (ip, lispd_item_rloc, 0,0)
+#define LISPD_EID( ip )  ( (ip),lispd_item_eid, 0, 0)
+#define LISPD_RLOC( ip ) ( (ip), lispd_item_rloc, 0,0)
 //    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
 //    #define LISPD_MASK( mask)  lispd_color_output( 0, mask,  col_port)
 #define LISPD_PORT( port )  (port)
@@ -183,13 +183,13 @@ LISP_LOG_DEBUG_3             /* high debug-level messages -> Log for each receiv
 } lispd_log_level_t;
 
 typedef struct {
-char* log_name;
+const char* log_name;
 int syslog_log_level;
 lispd_log_item_type_t type;
 } lispd_log_descriptor_t;
 
 //
-//const
+//
 //const
 
 typedef struct {
@@ -208,7 +208,7 @@ int (*start_logger)(const char *data);     /* data passed on via cli or config f
 int (*close_logger)(void *data);
 lispd_log_entry_t* (*new_entry)(const lispd_log_level_t lispd_log_level);
 void (*close_entry)(lispd_log_entry_t *entry);
-void (*append_to_entry)(lispd_log_entry_t *entry, const lispd_log_item_type_t type, char* str, int integer, void *data);
+void (*append_to_entry)(lispd_log_entry_t *entry, const lispd_log_item_type_t type, const char* str, int integer, void *data);
 } lispd_log_ops_t;
 
 /** KEPT for retrocompatibility, remove once the new logger is ok **/
@@ -220,7 +220,7 @@ const lispd_log_descriptor_t lispd_log_get_level_descriptor(const lispd_log_leve
  * True if log_level is enough to print results
  */
 
-int is_loggable (int log_level);
+int is_loggable (const int log_level);
 
 
 

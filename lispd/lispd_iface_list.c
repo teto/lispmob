@@ -1,4 +1,4 @@
-/* 
+/*
  * lispd_iface_list.c
  *
  * This file is part of LISP Mobile Node Implementation.
@@ -55,22 +55,22 @@ lispd_iface_elt *add_interface(char *iface_name)
 
     /* Creating the new interface*/
     if ((iface_list = malloc(sizeof(lispd_iface_list_elt)))==NULL){
-        lispd_log_msg(LISP_LOG_WARNING,"add_interface: Unable to allocate memory for iface_list_elt: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for iface_list_elt: ", strerror(errno));
         return(NULL);
     }
     if ((iface = malloc(sizeof(lispd_iface_elt)))==NULL){
-        lispd_log_msg(LISP_LOG_WARNING,"add_interface: Unable to allocate memory for iface_elt: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for iface_elt: ", strerror(errno));
         free(iface_list);
         return(NULL);
     }
     if ((iface->ipv4_address = (lisp_addr_t *)malloc(sizeof(lisp_addr_t)))==NULL){
-    	lispd_log_msg(LISP_LOG_WARNING,"add_interface: Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+    	lispd_log_msg(LISP_LOG_WARNING,"Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
     	free(iface_list);
     	free(iface);
     	return(NULL);
     }
     if ((iface->ipv6_address = (lisp_addr_t *)malloc(sizeof(lisp_addr_t)))==NULL){
-    	lispd_log_msg(LISP_LOG_WARNING,"add_interface: Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+    	lispd_log_msg(LISP_LOG_WARNING,"Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
     	free(iface_list);
     	free(iface->ipv4_address);
     	free(iface);
@@ -164,8 +164,7 @@ lispd_iface_elt *add_interface(char *iface_name)
            aux_iface_list = aux_iface_list->next;
         aux_iface_list->next = iface_list;
     }
-    lispd_log_msg(LISP_LOG_DEBUG_2,"add_interface: Interface %s with interface index %d added to interfaces lists",
-            iface_name, iface->iface_index);
+    LISPD_LOG(LISP_LOG_DEBUG_2,"Interface ",iface_name," with interface index ", LISPD_INTEGER(iface->iface_index)," added to interfaces lists");
     return (iface);
 }
 
@@ -373,7 +372,7 @@ lispd_iface_elt *get_any_output_iface(int afi)
 {
     lispd_iface_elt         *iface              = NULL;
     lispd_iface_list_elt    *iface_list_elt     = head_interface_list;
-    
+
     switch (afi){
         case AF_INET:
             while (iface_list_elt!=NULL){
@@ -508,7 +507,7 @@ void set_default_output_ifaces()
        set_tun_default_route_v4();
 #endif
     }
-    
+
     default_out_iface_v6 = get_any_output_iface(AF_INET6);
     if (default_out_iface_v6 != NULL) {
        lispd_log_msg(LISP_LOG_DEBUG_2,"Default IPv6 iface %s\n",default_out_iface_v6->iface_name);
@@ -558,9 +557,9 @@ lisp_addr_t *get_iface_address(
         lispd_iface_elt     *iface,
         int                 afi)
 {
-    
+
     lisp_addr_t     *addr   = NULL;
-    
+
     switch(afi){
         case AF_INET:
             addr = iface->ipv4_address;
@@ -569,7 +568,7 @@ lisp_addr_t *get_iface_address(
             addr = iface->ipv6_address;
             break;
     }
-    
+
     return (addr);
 }
 
@@ -590,7 +589,7 @@ int get_iface_socket(
         out_socket = ERR_SRC_ADDR;
         break;
     }
-    
+
     return (out_socket);
 }
 

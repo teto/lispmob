@@ -832,42 +832,38 @@ int add_database_mapping(
     uint8_t                     is_new_mapping      = FALSE;
 
     if (iface_name == NULL){
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: No interface specificated for database mapping. Ignoring mapping");
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: No interface specificated for database mapping. Ignoring mapping");
         return (BAD);
     }
 
     if (iid > MAX_IID || iid < -1) {
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Instance ID %d out of range [0..%d], disabling...", iid, MAX_IID);
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: Instance ID ", LISPD_INTEGER(iid)," out of range [0..", LISPD_INTEGER(MAX_IID),"], disabling...");
         iid = -1;
     }
 
     if (priority_v4 < (MAX_PRIORITY - 1) || priority_v4 > UNUSED_RLOC_PRIORITY) {
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Priority %d out of range [%d..%d], set minimum priority...",
-                priority_v4, MAX_PRIORITY, UNUSED_RLOC_PRIORITY);
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: Priority ", LISPD_INTEGER(priority_v4)," out of range [",LISPD_INTEGER(MAX_PRIORITY),"..",LISPD_INTEGER(UNUSED_RLOC_PRIORITY),"], set minimum priority...");
         priority_v4 = MIN_PRIORITY;
     }
 
     if (priority_v6 < (MAX_PRIORITY - 1)|| priority_v6 > UNUSED_RLOC_PRIORITY) {
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Priority %d out of range [%d..%d], set minimum priority...",
-                priority_v6, MAX_PRIORITY, UNUSED_RLOC_PRIORITY);
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: Priority ", LISPD_INTEGER(priority_v6)," out of range [",LISPD_INTEGER(MAX_PRIORITY),"..",LISPD_INTEGER(UNUSED_RLOC_PRIORITY),"], set minimum priority...");
         priority_v6 = MIN_PRIORITY;
     }
 
     if (weight_v4 < (MIN_WEIGHT) || weight_v4 > MAX_WEIGHT) {
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Weight %d out of range [%d..%d], set weight to 100...",
-                weight_v4, MIN_WEIGHT, MAX_WEIGHT);
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: IPv4 Weight ", LISPD_INTEGER(weight_v4)," out of range [",LISPD_INTEGER(MIN_WEIGHT),"..",LISPD_INTEGER(MAX_WEIGHT),"], set weight to 100...");
         weight_v4 = 100;
     }
 
     if (weight_v6 < (MIN_WEIGHT) || weight_v6 > MAX_WEIGHT) {
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Weight %d out of range [%d..%d], set weight to 100...",
-                weight_v6, MIN_WEIGHT, MAX_WEIGHT);
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: IPv6 Weight ", LISPD_INTEGER(weight_v6),"out of range [",LISPD_INTEGER(MIN_WEIGHT),"..",LISPD_INTEGER(MAX_WEIGHT),"], set weight to 100...");
         weight_v6 = 100;
     }
 
 
     if (get_lisp_addr_and_mask_from_char(eid,&eid_prefix,&eid_prefix_length)!=GOOD){
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Error parsing EID address");
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: Error parsing EID address");
         return (BAD);
     }
 
@@ -884,7 +880,7 @@ int add_database_mapping(
     {
         mapping = new_local_mapping(eid_prefix,eid_prefix_length,iid);
         if (mapping == NULL){
-            lispd_log_msg(LISP_LOG_ERR,"Configuration file: mapping ", LISPD_EID(eid), " could not be added");
+            LISPD_LOG(LISP_LOG_ERR,"Configuration file: mapping ", LISPD_EID(eid), " could not be added");
             return (BAD);
         }
         /* Add the mapping to the local database */
@@ -896,7 +892,7 @@ int add_database_mapping(
         is_new_mapping = TRUE;
     }else{
         if (mapping->iid != iid){
-            lispd_log_msg(LISP_LOG_ERR,"Same EID prefix with different iid. This configuration is not supported..."
+            LISPD_LOG(LISP_LOG_ERR,"Same EID prefix with different iid. This configuration is not supported..."
                     "Ignoring EID prefix.");
             return (BAD);
         }

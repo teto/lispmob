@@ -52,10 +52,10 @@ color_set_t color_sets[lispd_item_last] = {
 [lispd_item_default]       = { FG_COLOR(white), BG_COLOR(black), style_plain},
 [lispd_item_eid]           = { FG_COLOR(black), BG_COLOR(yellow), style_underline},
 [lispd_item_crit]          = { FG_COLOR(black), BG_COLOR(magenta),1},
-[lispd_item_err]           = { 30,BG_COLOR(magenta),1},
+[lispd_item_err]           = { FG_COLOR(blue), 1, style_plain},
 [lispd_item_debug]         = { FG_COLOR(blue), 1, style_plain},
 [lispd_item_warning]       = { 30, BG_COLOR(magenta),0},
-[lispd_item_info]          = { FG_COLOR(green),0,0},
+[lispd_item_info]          = { FG_COLOR(blue), 1, style_plain},
 [lispd_item_rloc]          = { FG_COLOR(magenta),1,0},
 [lispd_item_port]          = { 1,32,0},
 [lispd_item_filename]      = { 1,31,0}
@@ -101,7 +101,7 @@ static void lispd_log_console_close_entry(lispd_log_entry_t *entry)
 
 
 
-static void lispd_log_console_append_to_entry(lispd_log_entry_t *entry, const lispd_log_item_type_t type, char* str, int integer, void *data)
+static void lispd_log_console_append_to_entry(lispd_log_entry_t *entry, const lispd_log_item_type_t type, const char* str, int integer, void *data)
 {
 
     color_set_t *cs = &color_sets[type];
