@@ -58,9 +58,9 @@ int is_loggable (const int log_level){
     return (FALSE);
 }
 
-const lispd_log_descriptor_t lispd_log_get_level_descriptor(const lispd_log_level_t log_level)
+lispd_log_descriptor_t* lispd_log_get_level_descriptor(const lispd_log_level_t log_level)
 {
-    return lispd_log_descriptors[ log_level ];
+    return &lispd_log_descriptors[ log_level ];
 }
 
 

@@ -34,11 +34,11 @@
 #ifndef LISPD_LOG_H_
 #define LISPD_LOG_H_
 
-/* TODO move to a lispd_conf.h */
-#define LISPD_ENABLE_COLORS
+
 
 #define MAX_STRING_LENGTH 500
-#define POOL_SIZE 5
+
+/* TODO move to a lispd_conf.h */
 #define LISPD_DEBUG 1
 
 
@@ -54,8 +54,6 @@ lispd_item_crit,
 lispd_item_warning,
 lispd_item_debug,
 lispd_item_integer,
-//lispd_item_LISP_LOG_DEBUG_2,
-//lispd_item_LISP_LOG_DEBUG_3,
 lispd_item_info,
 lispd_item_err,
 lispd_item_mapserver,
@@ -64,7 +62,6 @@ lispd_item_last     /* always keep it last, used as counter */
 } lispd_log_item_type_t ;
 
 
-/* http://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/  */
 
 
 #define LISPD_ENTRY_EXPAND( arg1 ) LISPD_ENTRY_EXPAND_( STRIP_PARENS(arg1))
@@ -73,17 +70,12 @@ lispd_item_last     /* always keep it last, used as counter */
 #define LISPD_ENTRY_EXPAND_I( str, item_type , int, data, ...)  item_type, str, int , data
 
 
-// TODO if there is an empty parameter, then the next one is already expanded
 #define LISPD_INTEGER( integer )  ( 0,lispd_item_integer, integer, 0)
 #define LISPD_EID( ip )  ( (ip),lispd_item_eid, 0, 0)
 #define LISPD_EIDA( ip )  ( get_char_from_lisp_addr_t(ip),lispd_item_eid, 0, 0)
-// convert into 3 parameters ? set mask __VA_ARGS__
 #define LISPD_MAPPING( mapping )  LISPD_EID(get_char_from_lisp_addr_t( (mapping)->eid_prefix) ),"/", LISPD_INTEGER( (mapping)->eid_prefix_length  )
-//#define LISPD_MAPPING( mapping )  ( get_char_from_lisp_addr_t( (mapping)->eid_prefix),lispd_item_eid, 0, 0),"/",( 0,lispd_item_integer, integer, 0)
 #define LISPD_RLOC( ip ) ( (ip), lispd_item_rloc, 0,0)
 #define LISPD_RLOC_A( locator ) ( (get_char_from_lisp_addr_t(*(locator->locator_addr))), lispd_item_rloc, 0,0)
-//    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
-//    #define LISPD_MASK( mask)  lispd_color_output( 0, mask,  col_port)
 #define LISPD_PORT( port )  (port)
 #define LISPD_MASK( mask)   (mask)
 #define LISPD_FILENAME( filename )  lispd_color_output(filename , 0, col_filename)
@@ -95,14 +87,12 @@ lispd_item_last     /* always keep it last, used as counter */
 #define LISPD_PITR( host ) LISPD_RLOC(host)
 #define LISPD_ERRNO( errno ) strerror(errno)
 #define LISPD_TIMER( errno ) LISPD_INTEGER(errno)
-//#define LISPD_LOG_DESCRIPTOR( descriptor ) lispd_color_output(descriptor.log_name , 0, descriptor.color )
 
 
 
 
-#define APPLY(macro, args) APPLY_I(macro, args)
-#define APPLY_I(macro, args) macro args
-
+/*  Macros to detect if the macro parameter is between parenthesis. If yes, remove those
+Search http://gustedt.wordpress.com/ for explanation */
 // Here is the key : if x has no parenthesis then the STRIP_PARENS_I is a string, and no macro is called
 #define STRIP_PARENS(x) EVAL( (REPLACE_IF_MULTIPLE_ARGS x), x)
 #define REPLACE_IF_MULTIPLE_ARGS(...) 1,1
@@ -120,7 +110,8 @@ lispd_item_last     /* always keep it last, used as counter */
 
 
 
-/* Used to count the number of arguments (up to 10 arguments, update the macros if you need more) */
+/*  Macros to count number of macro arguments. (up to 20 arguments, update the macros if you need more)
+See http://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/  for explanation */
 #define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1)
 #define VA_NUM_1_OR_SEVERAL(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, \
                             _SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL,_SEVERAL, \
@@ -166,7 +157,6 @@ lispd_item_last     /* always keep it last, used as counter */
     #define LISPD_LOG(level, ...) LISPD_LOG_FINAL(level, __VA_ARGS__ )
 #endif
 
-//#define LISPD_LOG_FINAL(lispd_log_level,  ...) LISPD_LOG_FINAL_(lispd_log_level, __VA_ARGS__)
 #define LISPD_LOG_FINAL( lispd_log_level,  ... )  do { \
                                                lispd_log_entry_t *lispd_log_entry_ = lispd_logger.new_entry(lispd_log_level); \
                                                if( !lispd_log_entry_ ) break; \
@@ -193,21 +183,19 @@ LISP_LOG_DEBUG_2  ,          /* medium debug-level messages -> Errors in receive
 LISP_LOG_DEBUG_3             /* high debug-level messages -> Log for each received or generated packet */
 } lispd_log_level_t;
 
-// TODO try adding const
+
 typedef struct {
 const char* log_name;
-int syslog_log_level;
-lispd_log_item_type_t type;
+const int syslog_log_level;
+const lispd_log_item_type_t type;
 } lispd_log_descriptor_t;
 
-//
-//
-//const
+
 
 typedef struct {
 char str[ MAX_STRING_LENGTH ];
 lispd_log_level_t log_level;
-lispd_log_descriptor_t log_descriptor;
+lispd_log_descriptor_t *log_descriptor;
 } lispd_log_entry_t;
 
 
@@ -223,7 +211,7 @@ void (*append_to_entry)(lispd_log_entry_t *entry, const lispd_log_item_type_t ty
 /** KEPT for retrocompatibility, remove once the new logger is ok **/
 void lispd_log_msg( const lispd_log_level_t lispd_log_level, const char *format, ...);
 
-const lispd_log_descriptor_t lispd_log_get_level_descriptor(const lispd_log_level_t log_level);
+lispd_log_descriptor_t *lispd_log_get_level_descriptor(const lispd_log_level_t log_level);
 
 /*
  * True if log_level is enough to print results
