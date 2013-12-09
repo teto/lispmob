@@ -45,14 +45,14 @@ patricia_tree_t *AF6_map_cache           = NULL;
  */
 void map_cache_init()
 {
-  lispd_log_msg(LISP_LOG_DEBUG_2,  " Creating map cache...");
+  LISPD_LOG(LISP_LOG_DEBUG_2,  " Creating map cache...");
 
   AF4_map_cache = New_Patricia(sizeof(struct in_addr) * 8);
   AF6_map_cache = New_Patricia(sizeof(struct in6_addr) * 8);
 
 
   if (!AF4_map_cache || !AF6_map_cache){
-      lispd_log_msg(LISP_LOG_CRIT, "map_cache_init: Unable to allocate memory for map cache database");
+      LISPD_LOG(LISP_LOG_CRIT, "Unable to allocate memory for map cache database");
       exit_cleanup();
   }
 }
@@ -83,14 +83,14 @@ int add_map_cache_entry_to_db(lispd_map_cache_entry *entry)
     eid_prefix_length = entry->mapping->eid_prefix_length;
 
     if ((node = malloc(sizeof(patricia_node_t))) == NULL) {
-        lispd_log_msg(LISP_LOG_WARNING, "add_map_cache_entry: Unable to allocate memory for patrica_node_t: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for patrica_node_t: ", strerror(errno));
         return(ERR_MALLOC);
     }
 
     switch(eid_prefix.afi) {
     case AF_INET:
         if ((prefix = New_Prefix(AF_INET, &(eid_prefix.address.ip), eid_prefix_length)) == NULL) {
-            lispd_log_msg(LISP_LOG_WARNING, "add_map_cache_entry: Unable to allocate memory for prefix_t  (AF_INET): %s", strerror(errno));
+            LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for prefix_t  (AF_INET): ", strerror(errno));
             free(node);
             return(ERR_MALLOC);
         }
@@ -98,7 +98,7 @@ int add_map_cache_entry_to_db(lispd_map_cache_entry *entry)
         break;
     case AF_INET6:
         if ((prefix = New_Prefix(AF_INET6, &(eid_prefix.address.ipv6), eid_prefix_length)) == NULL) {
-            lispd_log_msg(LISP_LOG_WARNING, "add_map_cache_entry: Unable to allocate memory for prefix_t  (AF_INET6): %s", strerror(errno));
+            LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for prefix_t  (AF_INET6): ", strerror(errno));
             free(node);
             return(ERR_MALLOC);
         }
@@ -106,19 +106,23 @@ int add_map_cache_entry_to_db(lispd_map_cache_entry *entry)
         break;
     default:
         free(node);
-        lispd_log_msg(LISP_LOG_DEBUG_2, "add_map_cache_entry: Unknown afi (%d) when allocating prefix_t", eid_prefix.afi);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "Unknown afi (", LISPD_INTEGER(eid_prefix.afi), ") when allocating prefix_t" );
         return(ERR_AFI);
     }
     Deref_Prefix(prefix);
     if (node->data != NULL){            /* The node already exists */
         entry2 = (lispd_map_cache_entry *)node->data;
-        lispd_log_msg(LISP_LOG_DEBUG_2, "add_map_cache_entry: Map cache entry (%s/%d) already installed in the data base",
-                get_char_from_lisp_addr_t(entry2->mapping->eid_prefix),entry2->mapping->eid_prefix_length);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "Map cache entry ",
+                    LISPD_EID(get_char_from_lisp_addr_t(entry2->mapping->eid_prefix)) ,"/",
+                    LISPD_INTEGER(entry2->mapping->eid_prefix_length),
+                    "already installed in the data base");
         return (BAD);
     }
     node->data = (lispd_map_cache_entry *) entry;
-    lispd_log_msg(LISP_LOG_DEBUG_2, "Added map cache entry for EID: %s/%d",
-            get_char_from_lisp_addr_t(entry->mapping->eid_prefix),eid_prefix_length);
+    LISPD_LOG(LISP_LOG_DEBUG_2, "Added map cache entry for EID: ",
+            LISPD_EID(get_char_from_lisp_addr_t( (entry->mapping->eid_prefix) ) ),"/",
+            LISPD_INTEGER(eid_prefix_length)
+            );
     return (GOOD);
 }
 
@@ -154,7 +158,7 @@ patricia_node_t *lookup_map_cache_node(lisp_addr_t eid)
     }
 
     if (node==NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_3, "lookup_map_cache_node: The entry %s is not found in the map cache", get_char_from_lisp_addr_t(eid));
+        LISPD_LOG(LISP_LOG_DEBUG_3, "The entry ", LISPD_EID(get_char_from_lisp_addr_t(eid))," is not found in the map cache" );
     }
 
     return(node);
@@ -191,7 +195,7 @@ patricia_node_t * lookup_map_cache_exact_node(
     }
 
     if (node == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_3, "lookup_map_cache_exact_node: The entry %s/%d is not found in the map cache", get_char_from_lisp_addr_t(eid),prefixlen);
+        LISPD_LOG(LISP_LOG_DEBUG_3, "The entry ", LISPD_EID(get_char_from_lisp_addr_t(eid)),"/", LISPD_INTEGER(prefixlen)," is not found in the map cache");
     }
 
     return(node);
@@ -283,10 +287,10 @@ void del_map_cache_entry_from_db(
 
     node = lookup_map_cache_exact_node(eid, prefixlen);
     if (node == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"del_map_cache_entry: Unable to locate cache entry %s/%d for deletion",get_char_from_lisp_addr_t(eid),prefixlen);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Unable to locate cache entry  ", LISPD_EID(get_char_from_lisp_addr_t(eid) ),"/", LISPD_INTEGER(prefixlen) ," for deletion");
         return;
     } else {
-        lispd_log_msg(LISP_LOG_DEBUG_2,"Deleting map cache entry: %s/%d", get_char_from_lisp_addr_t(eid),prefixlen);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Deleting map cache entry: ", LISPD_EID(get_char_from_lisp_addr_t(eid) ),"/", LISPD_INTEGER(prefixlen) );
     }
 
     /*

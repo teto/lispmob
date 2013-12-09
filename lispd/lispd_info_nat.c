@@ -67,7 +67,7 @@ int process_info_nat_msg(
 
     switch (nat_pkt->rbit) {
     case NAT_NO_REPLY:
-        lispd_log_msg(LISP_LOG_DEBUG_2, "process_info_nat_msg: r-bit value not supported");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "r-bit value not supported");
         return (BAD);
 
     case NAT_REPLY:
@@ -117,7 +117,7 @@ lispd_pkt_info_nat_t *create_and_fill_info_nat_header(
 
     /* Reserve memory for the header */
     if ((hdr = (lispd_pkt_info_nat_t *) malloc(hdr_len)) == NULL) {
-        lispd_log_msg(LISP_LOG_DEBUG_2, "malloc (header info-nat packet): %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_DEBUG_2, "malloc (header info-nat packet): ", LISPD_ERRNO(errno));
         return (NULL);
     }
 
@@ -158,7 +158,7 @@ lispd_pkt_info_nat_t *create_and_fill_info_nat_header(
                    sizeof(lispd_pkt_info_nat_eid_t)),
                    eid_prefix,
                    0)) != afi_len) {
-        lispd_log_msg(LISP_LOG_DEBUG_2, "Error coping eid address ",eid_prefix);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "Error copying eid address ", LISPD_EIDA(*eid_prefix));
         free(hdr);
         return (NULL);
     }

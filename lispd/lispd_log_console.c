@@ -1,5 +1,6 @@
 
 #include "lispd_log_console.h"
+#include "lispd_external.h"
 
 
 /* styles */
@@ -36,15 +37,13 @@ typedef enum {
 #define RESET   "\033[0m"
 
 /* background ("bg") colors  */
-#define DEFAULT_BACKGROUND_COLOR 49
+//#define DEFAULT_BACKGROUND_COLOR 49
 
 
 #define FG_COLOR( color ) ( 30 + lispd_color_ ## color )
 #define BG_COLOR( color ) ( 40 + lispd_color_ ## color )
 
 
-
-#ifdef LISPD_ENABLE_COLORS
 
 color_set_t color_sets[lispd_item_last] = {
 
@@ -62,24 +61,20 @@ color_set_t color_sets[lispd_item_last] = {
 };
 
 
-#endif // LISPD_ENABLE_COLORS
-
-
-
 static char* eol[2] = {
 "\n",
 "\033[0m\n"
 };
 
-#ifdef LISPD_ENABLE_COLORS
-    #define LISPD_LOG_EOL entry->enable_color
-#else
-    #define LISPD_LOG_EOL 0
-#endif
+//#ifdef LISPD_ENABLE_COLORS
+//    #define LISPD_LOG_EOL entry->enable_color
+//#else
+//    #define LISPD_LOG_EOL 0
+//#endif
 
 static void lispd_log_console_close_entry(lispd_log_entry_t *entry)
 {
-    printf("%s%s", entry->str, eol[LISPD_LOG_EOL] );
+    printf("%s%s", entry->str, eol[colorize] );
 }
 
 #define COLOR_SET_FORMAT "\e[%d;%dm\e[%dm"
@@ -87,21 +82,22 @@ static void lispd_log_console_close_entry(lispd_log_entry_t *entry)
 
 #define LISPD_APPEND_TO_ENTRY_FINAL(format, ... ) snprintf( startingPoint, MAX_STRING_LENGTH-usedLen, format, __VA_ARGS__ );
 
-#ifdef LISPD_ENABLE_COLORS
-    #define CAT(x,y) x y
-    #define LISPD_APPEND_TO_STR( format, value) do {if(entry->enable_color)  \
+//#ifdef LISPD_ENABLE_COLORS
+//    #define CAT(x,y) x y
+// TODO convert into inline function ?
+    #define LISPD_APPEND_TO_STR( format, value) do {if(colorize)  \
                                                     LISPD_APPEND_TO_ENTRY_FINAL( "\e[%d;%dm\e[%dm" format , EXPAND_COLOR_SET( *cs ) , value ) \
                                                  else  \
                                                     LISPD_APPEND_TO_ENTRY_FINAL( (format), value ) \
                                                 } while(0)
 
-#else
-    #define LISPD_APPEND_TO_STR( format, value) LISPD_APPEND_TO_ENTRY_FINAL( (format), value)
-#endif
+//#else
+//    #define LISPD_APPEND_TO_STR( format, value) LISPD_APPEND_TO_ENTRY_FINAL( (format), value)
+//#endif
 
 
 
-static void lispd_log_console_append_to_entry(lispd_log_entry_t *entry, const lispd_log_item_type_t type, const char* str, int integer, void *data)
+static void lispd_log_console_append_to_entry(lispd_log_entry_t *entry, const lispd_log_item_type_t type, const char* str, const int integer, void *data)
 {
 
     color_set_t *cs = &color_sets[type];
@@ -150,12 +146,7 @@ static lispd_log_entry_t* lispd_log_console_get_entry(const lispd_log_level_t lo
     entry->log_descriptor = lispd_log_get_level_descriptor( log_level );
 
     entry->log_level = log_level;
-    #ifdef LISPD_ENABLE_COLORS
-    // ALso check command line is ok
-    if( ( isatty( fileno(stdout) ) )  ){
-        entry->enable_color=1;
-    }
-    #endif
+
     lispd_log_console_append_to_entry( entry, entry->log_descriptor.type, entry->log_descriptor.log_name, 0,0  );
 
     return entry;

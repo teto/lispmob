@@ -86,6 +86,7 @@ char    *config_file                        = NULL;
 int      debug_level                        = 0;
 int      default_rloc_afi                   = -1;
 int      daemonize                          = FALSE;
+int      colorize                           = FALSE;
 int      map_request_retries                = DEFAULT_MAP_REQUEST_RETRIES;
 /* RLOC probing parameters */
 int      rloc_probe_interval                = RLOC_PROBING_INTERVAL;
@@ -144,9 +145,9 @@ int main(int argc, char **argv)
 
 #ifdef ROUTER
 #ifdef OPENWRT
-    lispd_log_msg(LISP_LOG_INFO,"LISPmob compiled for openWRT xTR\n");
+    LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for openWRT xTR\n");
 #else
-    lispd_log_msg(LISP_LOG_INFO,"LISPmob compiled for linux xTR\n");
+    LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for linux xTR\n");
 #endif
 #else
     LISPD_LOG(LISP_LOG_INFO,"LISPmob compiled for mobile node");
@@ -199,7 +200,7 @@ int main(int argc, char **argv)
      */
 
     if (daemonize) {
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Starting the daemonizing process");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Starting the daemonizing process");
         if ((pid = fork()) < 0) {
             exit_cleanup();
         }
@@ -222,7 +223,7 @@ int main(int argc, char **argv)
 
     if (build_timers_event_socket(&timers_fd) == 0)
     {
-        lispd_log_msg(LISP_LOG_CRIT, " Error programing the timer signal. Exiting...");
+        LISPD_LOG(LISP_LOG_CRIT, " Error programing the timer signal. Exiting...");
         exit_cleanup();
     }
     init_timers();
@@ -247,17 +248,17 @@ int main(int argc, char **argv)
 #endif
 
     if (map_servers == NULL){
-        lispd_log_msg(LISP_LOG_CRIT, "No Map Server configured. Exiting...");
+        LISPD_LOG(LISP_LOG_CRIT, "No Map Server configured. Exiting...");
         exit_cleanup();
     }
 
     if (map_resolvers == NULL){
-        lispd_log_msg(LISP_LOG_CRIT, "No Map Resolver configured. Exiting...");
+        LISPD_LOG(LISP_LOG_CRIT, "No Map Resolver configured. Exiting...");
         exit_cleanup();
     }
 
     if (proxy_etrs == NULL){
-        lispd_log_msg(LISP_LOG_WARNING, "No Proxy-ETR defined. Packets to non-LISP destinations will be "
+        LISPD_LOG(LISP_LOG_WARNING, "No Proxy-ETR defined. Packets to non-LISP destinations will be "
                 "forwarded natively (no LISP encapsulation). This may prevent mobility in some scenarios.");
         sleep(3);
     }else{
@@ -346,7 +347,7 @@ int main(int argc, char **argv)
      */
     netlink_fd = opent_netlink_socket();
 
-    lispd_log_msg(LISP_LOG_INFO,"LISPmob (0.3.3): 'lispd' started...");
+    LISPD_LOG(LISP_LOG_INFO,"LISPmob (0.3.3): 'lispd' started...");
 
     /*
      * Request to dump the routing tables to obtain the gatways when processing the netlink messages
@@ -377,7 +378,7 @@ int main(int argc, char **argv)
 
     event_loop();
 
-    lispd_log_msg(LISP_LOG_INFO, "Exiting...");         /* event_loop returned bad */
+    LISPD_LOG(LISP_LOG_INFO, "Exiting...");         /* event_loop returned bad */
     closelog();
     return(0);
 }
@@ -433,15 +434,15 @@ void event_loop()
             process_input_packet(ipv6_data_input_fd, AF_INET6, tun_receive_fd);
         }
         if (FD_ISSET(ipv4_control_input_fd, &readfds)) {
-            lispd_log_msg(LISP_LOG_DEBUG_3,"Received IPv4 packet in the control input buffer (4342)");
+            LISPD_LOG(LISP_LOG_DEBUG_3,"Received IPv4 packet in the control input buffer (4342)");
             process_lisp_ctr_msg(ipv4_control_input_fd, AF_INET);
         }
         if (FD_ISSET(ipv6_control_input_fd, &readfds)) {
-            lispd_log_msg(LISP_LOG_DEBUG_3,"Received IPv6 packet in the control input buffer (4342)");
+            LISPD_LOG(LISP_LOG_DEBUG_3,"Received IPv6 packet in the control input buffer (4342)");
             process_lisp_ctr_msg(ipv6_control_input_fd, AF_INET6);
         }
         if (FD_ISSET(tun_receive_fd, &readfds)) {
-            lispd_log_msg(LISP_LOG_DEBUG_3,"Received packet in the tun buffer");
+            LISPD_LOG(LISP_LOG_DEBUG_3,"Received packet in the tun buffer");
             process_output_packet(tun_receive_fd, tun_receive_buf, TUN_RECEIVE_SIZE);
         }
         if (FD_ISSET(timers_fd,&readfds)){
@@ -449,7 +450,7 @@ void event_loop()
             process_timer_signal(timers_fd);
         }
         if (FD_ISSET(netlink_fd,&readfds)){
-            lispd_log_msg(LISP_LOG_DEBUG_3,"Received notification from net link");
+            LISPD_LOG(LISP_LOG_DEBUG_3,"Received notification from net link");
             process_netlink_msg(netlink_fd);
         }
     }
@@ -464,20 +465,20 @@ void signal_handler(int sig) {
     switch (sig) {
     case SIGHUP:
         /* TODO: SIGHUP should trigger reloading the configuration file */
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Received SIGHUP signal.");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Received SIGHUP signal.");
         break;
     case SIGTERM:
         /* SIGTERM is the default signal sent by 'kill'. Exit cleanly */
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Received SIGTERM signal. Cleaning up...");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Received SIGTERM signal. Cleaning up...");
         exit_cleanup();
         break;
     case SIGINT:
         /* SIGINT is sent by pressing Ctrl-C. Exit cleanly */
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Terminal interrupt. Cleaning up...");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Terminal interrupt. Cleaning up...");
         exit_cleanup();
         break;
     default:
-        lispd_log_msg(LISP_LOG_DEBUG_1,"Unhandled signal (%d)", sig);
+        LISPD_LOG(LISP_LOG_DEBUG_1,"Unhandled signal (", LISPD_INTEGER(sig),")" );
         exit(EXIT_FAILURE);
     }
 }

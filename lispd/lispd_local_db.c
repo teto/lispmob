@@ -162,7 +162,7 @@ patricia_node_t *lookup_eid_node(lisp_addr_t eid)
     }
 
     if ( node==NULL ){
-        lispd_log_msg(LISP_LOG_DEBUG_3, "The entry %s is not a local EID", get_char_from_lisp_addr_t(eid));
+        LISPD_LOG(LISP_LOG_DEBUG_3, "The entry ", LISPD_EID(get_char_from_lisp_addr_t(eid))," is not a local EID" );
     }
     return(node);
 }
@@ -194,7 +194,7 @@ patricia_node_t *lookup_eid_exact_node(
     }
 
     if (node == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_3, "The entry %s is not a local EID", get_char_from_lisp_addr_t(eid));
+        LISPD_LOG(LISP_LOG_DEBUG_3, "The entry ", LISPD_EID(get_char_from_lisp_addr_t(eid))," is not a local EID" );
     }
     return(node);
 }
@@ -256,11 +256,10 @@ void del_mapping_entry_from_db(
 
     result = lookup_eid_exact_node(eid, prefixlen);
     if (result == NULL){
-        lispd_log_msg(LISP_LOG_WARNING,"del_mapping_entry_from_db: Unable to locate eid entry %s/%d for deletion",
-                get_char_from_lisp_addr_t(eid),prefixlen);
+        LISPD_LOG(LISP_LOG_WARNING,"Unable to locate eid entry ",LISPD_EID(get_char_from_lisp_addr_t(eid)),"/",LISPD_INTEGER(prefixlen)," for deletion");
         return;
     } else {
-        lispd_log_msg(LISP_LOG_DEBUG_2,"Deleting EID entry %s/%d", get_char_from_lisp_addr_t(eid),prefixlen);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Deleting EID entry ", LISPD_EID(get_char_from_lisp_addr_t(eid)),"/",LISPD_INTEGER(prefixlen));
     }
 
     /*

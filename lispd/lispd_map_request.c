@@ -3,7 +3,7 @@
  *
  * This file is part of LISP Mobile Node Implementation.
  * Send a map request.
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -45,15 +45,15 @@
  *
  *
  *  Next is the inner IP header, either struct ip6_hdr or struct
- *  iphdr. 
+ *  iphdr.
  *
- *  This is follwed by a UDP header, random source port, 4342 
+ *  This is follwed by a UDP header, random source port, 4342
  *  dest port.
  *
  *  Followed by a struct lisp_pkt_map_request_t:
  *
  * Map-Request Message Format
- *   
+ *
  *       0                   1                   2                   3
  *       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  *      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -205,7 +205,7 @@ int process_map_request_record(
           * Check IID of the received Solicit Map Request match the IID of the map cache
           */
          if (map_cache_entry->mapping->iid != source_mapping->iid){
-             lispd_log_msg(LISP_LOG_DEBUG_2,"process_map_request_msg: The IID of the received Solicit Map Request doesn't match the IID of "
+             LISPD_LOG(LISP_LOG_DEBUG_2,"The IID of the received Solicit Map Request doesn't match the IID of "
                      "the entry in the map cache");
              free_mapping_elt(source_mapping, FALSE);
              return (BAD);
@@ -244,7 +244,7 @@ int process_map_request_record(
          }
      }
      if (remote_rloc == NULL){
-         lispd_log_msg(LISP_LOG_DEBUG_1,"process_map_request_msg: Couldn't generate map replay - "
+         LISPD_LOG(LISP_LOG_DEBUG_1,"Couldn't generate map replay - "
                  "No supported afi in the list of ITR-RLOCS");
          return (BAD);
      }
@@ -285,7 +285,7 @@ int process_map_request_record(
      }
      *cur_ptr = (uint8_t *)&(record->eid_prefix_afi);
      if ((err=pkt_process_eid_afi(cur_ptr, requested_mapping))!=GOOD){
-         lispd_log_msg(LISP_LOG_DEBUG_2,"process_map_request_record: Requested EID could not be processed");
+         LISPD_LOG(LISP_LOG_DEBUG_2,"Requested EID could not be processed");
          free_mapping_elt (requested_mapping, TRUE);
          return (err);
      }
@@ -295,9 +295,9 @@ int process_map_request_record(
      /*  We don't use prefix mask and use by default 32 or 128*/
      mapping = lookup_eid_in_db(requested_mapping->eid_prefix);
      if (!mapping){
-         lispd_log_msg(LISP_LOG_DEBUG_1,"The requested EID doesn't belong to this node: %s/%d",
-                 get_char_from_lisp_addr_t(requested_mapping->eid_prefix),
-                 requested_mapping->eid_prefix_length);
+         LISPD_LOG(LISP_LOG_DEBUG_1,"The requested EID doesn't belong to this node: ",
+                 LISPD_MAPPING(requested_mapping)
+                 );
          free_mapping_elt (requested_mapping, TRUE);
          return (BAD);
      }
@@ -367,8 +367,8 @@ int build_and_send_map_request_msg(
 
 
     if (src_addr == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "build_and_send_map_request_msg: Couden't send Map Request. No output interface with afi %d.",
-                dst_rloc_addr->afi);
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Couldn't send Map Request. No output interface with afi ",
+                LISPD_INTEGER(dst_rloc_addr->afi ));
         free (map_req_pkt);
         return (BAD);
     }
@@ -385,22 +385,22 @@ int build_and_send_map_request_msg(
     free (map_req_pkt);
 
     if (packet == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_1,"build_and_send_map_request_msg: Couldn't send Map Request. Error adding IP and UDP header to the message");
+        LISPD_LOG(LISP_LOG_DEBUG_1,"Couldn't send Map Request. Error adding IP and UDP header to the message");
         return (BAD);
     }
 
     /* Send the packet */
 
     if ((err = send_packet(out_socket,packet,packet_len)) == GOOD){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Sent Map-Request packet for %s/%d to %s: Encap: %c, Probe: %c, SMR: %c, SMR-inv: %c . Nonce: %s",
-                        get_char_from_lisp_addr_t(requested_mapping->eid_prefix),
-                        requested_mapping->eid_prefix_length,
-                        get_char_from_lisp_addr_t(*dst_rloc_addr),
-                        (encap == TRUE ? 'Y' : 'N'),
-                        (probe == TRUE ? 'Y' : 'N'),
-                        (solicit_map_request == TRUE ? 'Y' : 'N'),
-                        (smr_invoked == TRUE ? 'Y' : 'N'),
-                        get_char_from_nonce(*nonce));
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Sent Map-Request packet for ",
+                        LISPD_MAPPING(requested_mapping),
+                        " to ", LISPD_RLOC(get_char_from_lisp_addr_t(*dst_rloc_addr) ),
+                        " Encap: ", (encap == TRUE ? "Y" : "N"),
+                        "Probe: ", (probe == TRUE ? "Y" : "N"),
+                        " SMR: ", (solicit_map_request == TRUE ? "Y" : "N"),
+                        "SMR-inv: ", (smr_invoked == TRUE ? "Y" : "N"),
+                        "Nonce: ", get_char_from_nonce(*nonce)
+                        );
         result = GOOD;
     }else{
         lispd_log_msg(LISP_LOG_DEBUG_1, "Couldn't sent Map-Request packet for %s/%d: Encap: %c, Probe: %c, SMR: %c, SMR-inv: %c ",
@@ -557,7 +557,7 @@ uint8_t *build_map_request_pkt(
     }
     mrp->additional_itr_rloc_count = locators_ctr - 1; /* IRC = 0 --> 1 ITR-RLOC */
     if (locators_ctr == 0){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"build_map_request_pkt: No ITR RLOCs.");
+        LISPD_LOG(LISP_LOG_DEBUG_2,"No ITR RLOCs.");
         free(packet);
         return (NULL);
     }
@@ -573,7 +573,7 @@ uint8_t *build_map_request_pkt(
         /* Map-Reply Record */
         rec = (lispd_pkt_mapping_record_t *)cur_ptr;
         if ((pkt_fill_mapping_record(rec, src_mapping, NULL))== NULL) {
-            lispd_log_msg(LISP_LOG_DEBUG_2,"build_map_request_pkt: Couldn't buil map reply record for map request. "
+            LISPD_LOG(LISP_LOG_DEBUG_2,"Couldn't buil map reply record for map request. "
                     "Map Request will not be send");
             free(packet);
             return(NULL);
@@ -668,7 +668,7 @@ int send_map_request_miss(timer *t, void *arg)
     if (nonces == NULL){
         nonces = new_nonces_list();
         if (nonces==NULL){
-            lispd_log_msg(LISP_LOG_WARNING,"Send_map_request_miss: Unable to allocate memory for nonces.");
+            LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for nonces.");
             return (BAD);
         }
         map_cache_entry->nonces = nonces;
@@ -681,9 +681,8 @@ int send_map_request_miss(timer *t, void *arg)
         }
 
         if (nonces->retransmits > 0){
-            lispd_log_msg(LISP_LOG_DEBUG_1,"Retransmiting Map Request for EID: %s (%d retries)",
-                    get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix),
-                    nonces->retransmits);
+            LISPD_LOG(LISP_LOG_DEBUG_1,"Retransmiting Map Request for EID: ", LISPD_EID(get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix)),
+                            " (", LISPD_INTEGER(nonces->retransmits) ," retries)");
         }
 
         /* Get the RLOC of the Map Resolver to be used */
@@ -698,7 +697,7 @@ int send_map_request_miss(timer *t, void *arg)
                 0,
                 0,
                 &nonces->nonce[nonces->retransmits]))==BAD){
-            lispd_log_msg (LISP_LOG_DEBUG_1, "send_map_request_miss: Couldn't send map request for a new map cache entry");
+            LISPD_LOG (LISP_LOG_DEBUG_1, "Couldn't send map request for a new map cache entry");
 
         }
 
@@ -707,10 +706,10 @@ int send_map_request_miss(timer *t, void *arg)
                 send_map_request_miss, (void *)argument);
 
     }else{
-        lispd_log_msg(LISP_LOG_DEBUG_1,"No Map Reply fot EID %s/%d after %d retries. Removing map cache entry ...",
-                        get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix),
-                        map_cache_entry->mapping->eid_prefix_length,
-                        nonces->retransmits -1);
+        LISPD_LOG(LISP_LOG_DEBUG_1,"No Map Reply fot EID ", LISPD_MAPPING(map_cache_entry->mapping), " after ", LISPD_INTEGER(nonces->retransmits -1)," retries. Removing map cache entry ..."
+//                        get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix),
+//                        map_cache_entry->mapping->eid_prefix_length,
+                        );
         del_map_cache_entry_from_db(map_cache_entry->mapping->eid_prefix,
                 map_cache_entry->mapping->eid_prefix_length);
 

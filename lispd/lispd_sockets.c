@@ -36,7 +36,7 @@ int open_device_binded_raw_socket(
     char *device,
     int afi)
 {
-    
+
     //char *device = OUTPUT_IFACE;
 
        int device_len = 0;
@@ -79,41 +79,41 @@ int open_device_binded_raw_socket(
        lispd_log_msg(LISP_LOG_DEBUG_2, "open_device_binded_raw_socket: open socket %d in interface %s with afi: %d", s, device, afi);
 
        return s;
-    
+
 }
 
 int open_raw_input_socket(int afi){
-    
+
     struct protoent     *proto  = NULL;
     int                 sock    = 0;
     int                 tr      = 1;
-    
+
     if ((proto = getprotobyname("UDP")) == NULL) {
-        lispd_log_msg(LISP_LOG_ERR, "open_raw_input_socket: getprotobyname: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_ERR, "getprotobyname: ", LISPD_ERRNO(errno) );
         return(BAD);
     }
-    
+
     /*
      *  build the ipv4_data_input_fd, and make the port reusable
      */
-    
-    
+
+
     if ((sock = socket(afi,SOCK_RAW,proto->p_proto)) < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "open_raw_input_socket: socket: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_ERR, "socket: ", LISPD_ERRNO(errno) );
         return(BAD);
     }
-    lispd_log_msg(LISP_LOG_DEBUG_3,"open_raw_input_socket: socket at creation: %d\n",sock);
-    
+    LISPD_LOG(LISP_LOG_DEBUG_3,"socket at creation: \n", LISPD_INTEGER(sock) );
+
     if (setsockopt(sock,
         SOL_SOCKET,
         SO_REUSEADDR,
         &tr,
         sizeof(int)) == -1) {
-            lispd_log_msg(LISP_LOG_WARNING, "open_raw_input_socket: setsockopt SO_REUSEADDR: %s", strerror(errno));
+            LISPD_LOG(LISP_LOG_WARNING, "setsockopt SO_REUSEADDR: ", LISPD_ERRNO(errno) );
             close(sock);
             return(BAD);
         }
-        
+
         return (sock);
 }
 
@@ -123,19 +123,19 @@ int open_udp_socket(int afi){
     struct protoent     *proto  = NULL;
     int                 sock    = 0;
     int                 tr      = 1;
-    
+
     if ((proto = getprotobyname("UDP")) == NULL) {
-        lispd_log_msg(LISP_LOG_ERR, "open_udp_socket: getprotobyname: %s", strerror(errno));
+        lispd_log_msg(LISP_LOG_ERR, "getprotobyname: ", LISPD_ERRNO(errno) );
         return(BAD);
     }
-     
+
     /*
      *  build the ipv4_data_input_fd, and make the port reusable
      */
 
-    
+
     if ((sock = socket(afi,SOCK_DGRAM,proto->p_proto)) < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "open_udp_socket: socket: %s", strerror(errno));
+        lispd_log_msg(LISP_LOG_ERR, "open_udp_socket: socket: ", LISPD_ERRNO(errno) );
         return(BAD);
     }
     lispd_log_msg(LISP_LOG_DEBUG_3,"open_udp_socket: socket at creation: %d\n",sock);
@@ -203,39 +203,39 @@ int bind_socket(
     struct sockaddr_in6 sock_addr_v6;
     struct sockaddr     *sock_addr      = NULL;
     int                 sock_addr_len   = 0;
-    
-        
+
+
     switch (afi){
         case AF_INET:
             memset(&sock_addr_v4,0,sizeof(sock_addr_v4));           /* be sure */
             sock_addr_v4.sin_port        = htons(port);
             sock_addr_v4.sin_family      = AF_INET;
             sock_addr_v4.sin_addr.s_addr = INADDR_ANY;
-            
+
             sock_addr = (struct sockaddr *) &sock_addr_v4;
             sock_addr_len = sizeof(sock_addr_v4);
             break;
-            
+
         case AF_INET6:
             memset(&sock_addr_v6,0,sizeof(sock_addr_v6));                   /* be sure */
             sock_addr_v6.sin6_family   = AF_INET6;
             sock_addr_v6.sin6_port     = htons(port);
             sock_addr_v6.sin6_addr     = in6addr_any;
-            
+
             sock_addr = (struct sockaddr *) &sock_addr_v6;
             sock_addr_len = sizeof(sock_addr_v6);
             break;
-            
+
         default:
             return BAD;
     }
-    
-    
+
+
     if (bind(sock,sock_addr, sock_addr_len) == -1) {
         lispd_log_msg(LISP_LOG_WARNING, "bind input socket: %s", strerror(errno));
         return(BAD);
     }
-    
+
     return(sock);
 }
 
@@ -246,9 +246,9 @@ int open_control_input_socket(int afi){
     int         sock    = 0;
 
     sock = open_udp_socket(afi);
-    
+
     sock = bind_socket(sock,afi,LISP_CONTROL_PORT);
-    
+
     if(sock == BAD){
         return (BAD);
     }
@@ -280,15 +280,15 @@ int open_control_input_socket(int afi){
 
 
 int open_data_input_socket(int afi){
-    
+
     int         sock        = 0;
     int         dummy_sock  = 0; /* To avoid ICMP port unreacheable packets */
     const int   on          = 1;
-    
+
     sock = open_raw_input_socket(afi);
 
     dummy_sock = open_udp_socket(afi);
-    
+
     dummy_sock = bind_socket(dummy_sock,afi,LISP_DATA_PORT);
 
     if(sock == BAD){
@@ -297,7 +297,7 @@ int open_data_input_socket(int afi){
 
     switch (afi){
         case AF_INET:
-            
+
             /* IP_RECVTOS is requiered to get later the IPv4 original TOS */
             if(setsockopt(sock, IPPROTO_IP, IP_RECVTOS, &on, sizeof(on))< 0){
                 lispd_log_msg(LISP_LOG_WARNING, "setsockopt IP_RECVTOS: %s", strerror(errno));
@@ -307,28 +307,28 @@ int open_data_input_socket(int afi){
             if(setsockopt(sock, IPPROTO_IP, IP_RECVTTL, &on, sizeof(on))< 0){
                 lispd_log_msg(LISP_LOG_WARNING, "setsockopt IP_RECVTTL: %s", strerror(errno));
             }
-            
+
             break;
-            
+
         case AF_INET6:
-            
+
             /* IPV6_RECVTCLASS is requiered to get later the IPv6 original TOS */
             if(setsockopt(sock, IPPROTO_IPV6, IPV6_RECVTCLASS, &on, sizeof(on))< 0){
                 lispd_log_msg(LISP_LOG_WARNING, "setsockopt IPV6_RECVTCLASS: %s", strerror(errno));
             }
-            
+
             /* IPV6_RECVHOPLIMIT is requiered to get later the IPv6 original TTL */
             if(setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on))< 0){
                 lispd_log_msg(LISP_LOG_WARNING, "setsockopt IPV6_RECVHOPLIMIT: %s", strerror(errno));
             }
-            
+
             break;
-            
+
         default:
             close(sock);
             return(BAD);
     }
-    
+
     return(sock);
 }
 
@@ -436,8 +436,8 @@ int get_packet_and_socket_inf (
         u_char data4[CMSG_SPACE(sizeof(struct in_pktinfo))]; /* Space for IPv4 pktinfo */
         u_char data6[CMSG_SPACE(sizeof(struct in6_pktinfo))]; /* Space for IPv6 pktinfo */
     };
-    
-    
+
+
     struct sockaddr_in  s4;
     struct sockaddr_in6 s6;
     struct msghdr       msg;
@@ -508,7 +508,7 @@ int get_data_packet (
         struct cmsghdr cmsg;
         u_char data[CMSG_SPACE(sizeof(int))+CMSG_SPACE(sizeof(int))]; /* Space for TTL and TOS data */
     };
-    
+
     struct sockaddr_in  s4;
     struct sockaddr_in6 s6;
     struct msghdr       msg;
@@ -516,15 +516,15 @@ int get_data_packet (
     union  control_data  cmsg;
     struct cmsghdr      *cmsgptr    = NULL;
     int                 nbytes      = 0;
-    
+
     iov[0].iov_base = packet;
     iov[0].iov_len = MAX_IP_PACKET;
-    
+
     memset(&msg, 0, sizeof msg);
     msg.msg_iov = iov;
     msg.msg_iovlen = 1;
     msg.msg_control = &cmsg;
-    msg.msg_controllen = sizeof cmsg; 
+    msg.msg_controllen = sizeof cmsg;
     if (afi == AF_INET){
         msg.msg_name = &s4;
         msg.msg_namelen = sizeof (struct sockaddr_in);
@@ -532,7 +532,7 @@ int get_data_packet (
         msg.msg_name = &s6;
         msg.msg_namelen = sizeof (struct sockaddr_in6);
     }
-    
+
     nbytes = recvmsg(sock, &msg, 0);
     if (nbytes == -1) {
         lispd_log_msg(LISP_LOG_WARNING, "read_packet: recvmsg error: %s", strerror(errno));
@@ -540,10 +540,10 @@ int get_data_packet (
     }
 
     *length = nbytes;
-    
+
     if (afi == AF_INET){
         for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
-            
+
             if (cmsgptr->cmsg_level == IPPROTO_IP && cmsgptr->cmsg_type == IP_TTL) {
                 *ttl = *((uint8_t *)CMSG_DATA(cmsgptr));
             }
@@ -555,16 +555,16 @@ int get_data_packet (
 
     }else {
         for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
-            
+
             if (cmsgptr->cmsg_level == IPPROTO_IPV6 && cmsgptr->cmsg_type == IPV6_HOPLIMIT) {
                 *ttl = *((uint8_t *)CMSG_DATA(cmsgptr));
             }
-            
+
             if (cmsgptr->cmsg_level == IPPROTO_IPV6 && cmsgptr->cmsg_type == IPV6_TCLASS) {
                 *tos = *((uint8_t *)CMSG_DATA(cmsgptr));
             }
         }
     }
-    
+
     return (GOOD);
 }

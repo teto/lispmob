@@ -269,8 +269,7 @@ int del_rule(
     int result = BAD;
     result = modify_rule(afi, if_index, RTM_DELRULE, table,priority, type, src_addr, src_plen, dst_addr, dst_plen, flags);
     if (result == GOOD){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "del_rule: Removed rule for source routing of src addr: %s",
-                get_char_from_lisp_addr_t(*src_addr));
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Removed rule for source routing of src addr: ", LISPD_EID(get_char_from_lisp_addr_t(*src_addr)) );
     }
 
     return (result);
@@ -348,7 +347,7 @@ int request_route_table(uint32_t table, int afi)
     retval = send(netlink_fd, sndbuf, NLMSG_LENGTH(rta_len), 0);
 
     if (retval < 0) {
-        lispd_log_msg(LISP_LOG_CRIT, "request_route_table: send netlink command failed %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_CRIT, "send netlink command failed ", LISPD_ERRNO(errno) );
         exit_cleanup();
     }
     return(GOOD);
@@ -395,7 +394,7 @@ inline int modify_route(
     sockfd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
 
     if (sockfd < 0) {
-        lispd_log_msg(LISP_LOG_CRIT, "modify_route: Failed to connect to netlink socket");
+        LISPD_LOG(LISP_LOG_CRIT, "Failed to connect to netlink socket");
         exit_cleanup();
     }
 
@@ -506,7 +505,7 @@ inline int modify_route(
     retval = send(sockfd, sndbuf, NLMSG_LENGTH(rta_len), 0);
 
     if (retval < 0) {
-        lispd_log_msg(LISP_LOG_CRIT, "modify_route: send netlink command failed %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_CRIT, "send netlink command failed ", strerror(errno));
         close(sockfd);
         exit_cleanup();
     }
@@ -527,12 +526,16 @@ int add_route(
     int result = BAD;
     result = modify_route(RTM_NEWROUTE, afi,ifindex, dest, src, gw, prefix_len, metric, table);
     if (result == GOOD){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "add_route: added route to the system: src addr: %s, dst prefix:%s/%d, gw: %s, table: %d",
-                (src != NULL) ? get_char_from_lisp_addr_t(*src) : "-",
-                (dest != NULL) ? get_char_from_lisp_addr_t(*dest) : "-",
-                prefix_len,
-                (gw != NULL) ? get_char_from_lisp_addr_t(*gw) : "-",
-                table);
+        LISPD_LOG(LISP_LOG_DEBUG_1, "added route to the system: src addr: ", LISPD_EID((src != NULL) ? get_char_from_lisp_addr_t(*src) : "-"),
+                                ", dst prefix: ", LISPD_EID((dest != NULL) ? get_char_from_lisp_addr_t(*dest) : "-"),"/", LISPD_INTEGER(prefix_len),
+                                ", gw: ", LISPD_EID((gw != NULL) ? get_char_from_lisp_addr_t(*gw) : "-"),
+                                ", table: ", LISPD_INTEGER(table)
+
+//                (dest != NULL) ? get_char_from_lisp_addr_t(*dest) : "-",
+//                prefix_len,
+//                (gw != NULL) ? get_char_from_lisp_addr_t(*gw) : "-",
+//                table
+                );
     }
 
     return (result);
@@ -551,7 +554,7 @@ int del_route(
     int result = BAD;
     result = modify_route(RTM_DELROUTE, afi, ifindex, dest, src, gw, prefix_len, metric, table);
     if (result == GOOD){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "del_route: deleted route  from the system");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "deleted route  from the system");
     }
     return (result);
 }

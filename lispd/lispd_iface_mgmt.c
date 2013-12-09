@@ -96,7 +96,7 @@ int opent_netlink_socket()
     netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 
     if (netlink_fd < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "opent_netlink_socket: Failed to connect to netlink socket");
+        LISPD_LOG(LISP_LOG_ERR, "Failed to connect to netlink socket");
         return(BAD);
     }
 
@@ -129,19 +129,19 @@ void process_netlink_msg(int netlink_fd){
         for (;(NLMSG_OK (nlh, len)) && (nlh->nlmsg_type != NLMSG_DONE); nlh = NLMSG_NEXT(nlh, len)){
             switch(nlh->nlmsg_type){
             case RTM_NEWADDR:
-                lispd_log_msg(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  new address message");
+                LISPD_LOG(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  new address message");
                 process_nl_add_address (nlh);
                 break;
             case RTM_DELADDR:
-                lispd_log_msg(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  del address message");
+                LISPD_LOG(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  del address message");
                 process_nl_del_address (nlh);
                 break;
             case RTM_NEWLINK:
-                lispd_log_msg(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  link message");
+                LISPD_LOG(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  link message");
                 process_nl_new_link (nlh);
                 break;
             case RTM_NEWROUTE:
-                lispd_log_msg(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  new route message");
+                LISPD_LOG(LISP_LOG_DEBUG_2, "=>process_netlink_msg: Received  new route message");
                 process_nl_new_route (nlh);
                 break;
             default:
@@ -176,8 +176,7 @@ void process_nl_add_address (struct nlmsghdr *nlh)
 
     if (iface == NULL){
         if_indextoname(iface_index, iface_name);
-        lispd_log_msg(LISP_LOG_DEBUG_2, "process_nl_add_address: the netlink message is not for any interface associated with RLOCs  (%s / %d)",
-                iface_name, iface_index);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "the netlink message is not for any interface associated with RLOCs  (", LISPD_IFNAME(iface_name)," / ", LISPD_INTEGER(iface_index) ,")");
         return;
     }
     rth = IFA_RTA (ifa);
@@ -218,14 +217,14 @@ void process_address_change (
 
     /* Check if the addres is a global address*/
     if (is_link_local_addr(new_addr) == TRUE){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"precess_address_change: the extractet address from the netlink "
-                "messages is a local link address: %s discarded", get_char_from_lisp_addr_t(new_addr));
+        LISPD_LOG(LISP_LOG_DEBUG_2,"the extractet address from the netlink "
+                "messages is a local link address: ", LISPD_EID(get_char_from_lisp_addr_t(new_addr))," discarded" );
         return;
     }
     /* If default RLOC afi defined (-a 4 or 6), only accept addresses of the specified afi */
     if (default_rloc_afi != -1 && default_rloc_afi != new_addr.afi){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"precess_address_change: Default RLOC afi defined (-a #): Skipped %s address in iface %s",
-                (new_addr.afi == AF_INET) ? "IPv4" : "IPv6",iface->iface_name);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Default RLOC afi defined (-a #): Skipped ", ((new_addr.afi == AF_INET) ? "IPv4" : "IPv6")," address in iface ",LISPD_IFNAME(iface->iface_name)
+                  );
         return;
     }
     /*
@@ -243,8 +242,7 @@ void process_address_change (
 
     // Same address that we already have
     if (compare_lisp_addr_t(iface_addr,&new_addr)==0){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"precess_address_change: The detected change of address for interface %s "
-                "doesn't affect",iface->iface_name);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"The detected change of address for interface ",iface->iface_name, "doesn't affect");
         /* We must rebind the socket just in case the address is from a virtual interface who has changed its interafce number */
         switch (new_addr.afi){
         case AF_INET:
@@ -298,8 +296,7 @@ void process_address_change (
 
     /* The interface was down during initial configuratiopn process and now it is up. Activate address */
     if (aux_afi == AF_UNSPEC){
-        lispd_log_msg(LISP_LOG_DEBUG_1,"process_address_change: Activating the locator address %s"
-                , get_char_from_lisp_addr_t(new_addr));
+        LISPD_LOG(LISP_LOG_DEBUG_1,"Activating the locator address ", LISPD_RLOC(get_char_from_lisp_addr_t(new_addr)) );
         activate_interface_address(iface, new_addr);
         if (iface->status == UP){
             iface_balancing_vectors_calc(iface);
@@ -310,20 +307,20 @@ void process_address_change (
 
             if ((default_ctrl_iface_v4 == NULL && new_addr.afi == AF_INET) ||
                     (default_ctrl_iface_v6 == NULL && new_addr.afi == AF_INET6)){
-                lispd_log_msg(LISP_LOG_DEBUG_2,"No default control interface. Recalculate new control interface");
+                LISPD_LOG(LISP_LOG_DEBUG_2,"No default control interface. Recalculate new control interface");
                 set_default_ctrl_ifaces();
             }
 
             if ((default_out_iface_v4 == NULL && new_addr.afi == AF_INET) ||
                     (default_out_iface_v6 == NULL && new_addr.afi == AF_INET6)){
-                lispd_log_msg(LISP_LOG_DEBUG_2,"No default output interface. Recalculate new output interface");
+                LISPD_LOG(LISP_LOG_DEBUG_2,"No default output interface. Recalculate new output interface");
                 set_default_output_ifaces();
             }
         }
     }
 
-    lispd_log_msg(LISP_LOG_DEBUG_1,"precess_address_change: New address detected for interface %s -> %s",
-            iface->iface_name, get_char_from_lisp_addr_t(new_addr));
+    LISPD_LOG(LISP_LOG_DEBUG_1,"precess_address_change: New address detected for interface ",iface->iface_name," -> " ,
+            LISPD_RLOC( get_char_from_lisp_addr_t(new_addr) ) );
 
     mapping_list = iface->head_mappings_list;
     /* Sort again the locators list of the affected mappings*/
@@ -402,8 +399,7 @@ void process_nl_del_address (struct nlmsghdr *nlh)
 
     if (iface == NULL){
         if_indextoname(iface_index, iface_name);
-        lispd_log_msg(LISP_LOG_DEBUG_2, "process_nl_add_address: the netlink message is not for any interface associated with RLOCs (%s)",
-                iface_name);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "the netlink message is not for any interface associated with RLOCs (",iface_name,")");
         return;
     }
     rth = IFA_RTA (ifa);
@@ -424,7 +420,7 @@ void process_nl_del_address (struct nlmsghdr *nlh)
         }
     }
     /* Actions to be done when address is removed */
-    lispd_log_msg(LISP_LOG_DEBUG_2,"   deleted address: %s\n", get_char_from_lisp_addr_t(new_addr));
+    LISPD_LOG(LISP_LOG_DEBUG_2,"   deleted address: \n", LISPD_RLOC(get_char_from_lisp_addr_t(new_addr)) );
 }
 
 void process_nl_new_link (struct nlmsghdr *nlh)
@@ -451,14 +447,13 @@ void process_nl_new_link (struct nlmsghdr *nlh)
             iface = get_interface(iface_name);
         }
         if (iface == NULL){
-            lispd_log_msg(LISP_LOG_DEBUG_2, "process_nl_new_link: the netlink message is not for any interface associated with RLOCs  (%s)",
-                    iface_name);
+            LISPD_LOG(LISP_LOG_DEBUG_2, "the netlink message is not for any interface associated with RLOCs  (", iface_name,")" );
             return;
         }else{
             old_iface_index = iface->iface_index;
             iface->iface_index = iface_index;
-            lispd_log_msg(LISP_LOG_DEBUG_2,"process_nl_new_link: The new index of the interface %s is: %d. Updating tables",
-                    iface_name, iface->iface_index);
+            LISPD_LOG(LISP_LOG_DEBUG_2,"The new index of the interface ", iface_name, " is: ", LISPD_INTEGER(iface->iface_index)  ,". Updating tables");
+
             /* Update routing tables and reopen sockets*/
             if (iface->ipv4_address->afi != AF_UNSPEC){
                 del_rule(AF_INET,0,old_iface_index,old_iface_index,RTN_UNICAST,iface->ipv4_address,32,NULL,0,0);
@@ -478,11 +473,11 @@ void process_nl_new_link (struct nlmsghdr *nlh)
     }
 
     if ((ifi->ifi_flags & IFF_RUNNING) != 0){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "process_nl_new_link: Interface %s changes its status to UP",iface->iface_name);
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Interface ",iface->iface_name," changes its status to UP");
         status = UP;
     }
     else{
-        lispd_log_msg(LISP_LOG_DEBUG_1, "process_nl_new_link: Interface %s changes its status to DOWN",iface->iface_name);
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Interface ",iface->iface_name," changes its status to DOWN");
         status = DOWN;
     }
 
@@ -505,7 +500,7 @@ void process_nl_new_route (struct nlmsghdr *nlh)
     rtm = (struct rtmsg *) NLMSG_DATA (nlh);
 
     if ((rtm->rtm_family != AF_INET) && (rtm->rtm_family != AF_INET6)) {
-        lispd_log_msg(LISP_LOG_DEBUG_2,"process_nl_new_route: Unknown adddress family");
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Unknown adddress family");
         return;
     }
 
@@ -524,8 +519,7 @@ void process_nl_new_route (struct nlmsghdr *nlh)
             iface = get_interface_from_index(iface_index);
             if_indextoname(iface_index, iface_name);
             if (iface == NULL){
-                lispd_log_msg(LISP_LOG_DEBUG_2, "process_nl_new_route: the netlink message is not for any interface associated with RLOCs (%s)",
-                        iface_name);
+                LISPD_LOG(LISP_LOG_DEBUG_2, "the netlink message is not for any interface associated with RLOCs (",iface_name,")");
                 return;
             }
             break;
@@ -562,21 +556,20 @@ void process_nl_new_route (struct nlmsghdr *nlh)
     if (gateway.afi != AF_UNSPEC && iface_index != 0 && dst.afi == AF_UNSPEC){
         /* Check default afi*/
         if (default_rloc_afi != -1 && default_rloc_afi != gateway.afi){
-            lispd_log_msg(LISP_LOG_DEBUG_1,  "process_nl_new_route: Default RLOC afi defined (-a #): Skipped %s gateway in iface %s",
-                    (gateway.afi == AF_INET) ? "IPv4" : "IPv6",iface->iface_name);
+            LISPD_LOG(LISP_LOG_DEBUG_1,  "Default RLOC afi defined (-a #): Skipped ", (gateway.afi == AF_INET) ? "IPv4" : "IPv6" ," gateway in iface "
+                    , LISPD_IFNAME(iface->iface_name) );
             return;
         }
 
         /* Check if the addres is a global address*/
         if (is_link_local_addr(gateway) == TRUE){
-            lispd_log_msg(LISP_LOG_DEBUG_2,"process_nl_new_route: the extractet address from the netlink "
-                    "messages is a local link address: %s discarded", get_char_from_lisp_addr_t(gateway));
+            LISPD_LOG(LISP_LOG_DEBUG_2,"the extracted address from the netlink "
+                    "messages is a local link address: ", get_char_from_lisp_addr_t(gateway), " discarded" );
             return;
         }
 
         /* Process the new gateway */
-        lispd_log_msg(LISP_LOG_DEBUG_1,  "process_nl_new_route: Process new gateway associated to the interface %s:  %s",
-                iface_name, get_char_from_lisp_addr_t(gateway));
+        LISPD_LOG(LISP_LOG_DEBUG_1,  "Process new gateway associated to the interface ",LISPD_IFNAME(iface_name), ":", get_char_from_lisp_addr_t(gateway));
         process_new_gateway(gateway,iface);
     }
 }
@@ -603,7 +596,7 @@ void process_new_gateway (
     }
     if (*gw_addr == NULL){ // The default gateway of this interface is not deffined yet
         if ((*gw_addr = (lisp_addr_t *)malloc(sizeof(lisp_addr_t))) == NULL){
-            lispd_log_msg(LISP_LOG_WARNING,"process_new_gateway: Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+            LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for lisp_addr_t: ", strerror(errno));
             return;
         }
         if ((copy_lisp_addr_t(*gw_addr,&gateway,FALSE)) != GOOD){
@@ -628,7 +621,7 @@ void process_link_status_change(
     int                 new_status)
 {
     if (iface->status == new_status){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"process_link_status_change: The detected change of status doesn't affect");
+        LISPD_LOG(LISP_LOG_DEBUG_2,"The detected change of status doesn't affect");
         return;
     }
 
@@ -649,7 +642,7 @@ void process_link_status_change(
             || default_ctrl_iface_v6 == iface
             || default_ctrl_iface_v4 == NULL
             || default_ctrl_iface_v6 == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"Default control interface down. Recalculate new control interface");
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Default control interface down. Recalculate new control interface");
         set_default_ctrl_ifaces();
     }
 
@@ -657,7 +650,7 @@ void process_link_status_change(
             || default_out_iface_v6 == iface
             || default_out_iface_v4 == NULL
             || default_out_iface_v6 == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_2,"Default output interface down. Recalculate new output interface");
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Default output interface down. Recalculate new output interface");
         set_default_output_ifaces();
     }
 
@@ -706,10 +699,7 @@ void activate_interface_address(
      */
     while (mapping_list != NULL){
         mapping = mapping_list->mapping;
-        lispd_log_msg(LISP_LOG_DEBUG_2,"Activating locator %s associated to the EID %s/%d\n",
-                get_char_from_lisp_addr_t(new_address),
-                get_char_from_lisp_addr_t(mapping->eid_prefix),
-                mapping->eid_prefix_length);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Activating locator ", LISPD_RLOC(get_char_from_lisp_addr_t(new_address)), " associated to the EID ", LISPD_MAPPING(mapping),"\n");
         not_init_locators_list = &(((lcl_mapping_extended_info *)mapping->extended_info)->head_not_init_locators_list);
         locator = extract_locator_from_list (not_init_locators_list, new_address);
         if (locator != NULL){
@@ -730,11 +720,8 @@ void activate_interface_address(
                 free_locator(locator);
             }
         }else{
-            lispd_log_msg(LISP_LOG_DEBUG_1,"activate_interface_address: No locator with address %s has been found"
-                    " in the not init locators list of the mapping %s/%d. Is priority equal to -1 for this EID and afi?",
-                    get_char_from_lisp_addr_t(new_address),
-                    get_char_from_lisp_addr_t(mapping->eid_prefix),
-                    mapping->eid_prefix_length);
+            LISPD_LOG(LISP_LOG_DEBUG_1,"No locator with address ", LISPD_RLOC(get_char_from_lisp_addr_t(new_address)) ,
+            " has been found in the not init locators list of the mapping ",LISPD_MAPPING(mapping)," Is priority equal to -1 for this EID and afi?");
         }
         mapping_list = mapping_list->next;
     }

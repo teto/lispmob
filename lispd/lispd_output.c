@@ -589,12 +589,12 @@ int select_src_locators_from_balancing_locators_vec (
         src_vec_len = src_blv->v4_locators_vec_length;
     }
     if (src_vec_len == 0){
-        lispd_log_msg(LISP_LOG_DEBUG_3,"select_src_locators_from_balancing_locators_vec: No source locators availables to send packet");
+        LISPD_LOG(LISP_LOG_DEBUG_3,"No source locators availables to send packet");
         return(BAD);
     }
     hash = get_hash_from_tuple (tuple);
     if (hash == 0){
-        lispd_log_msg(LISP_LOG_DEBUG_1,"select_src_locators_from_balancing_locators_vec: Couldn't get the hash of the tuple to select the rloc. Using the default rloc");
+        LISPD_LOG(LISP_LOG_DEBUG_1,"Couldn't get the hash of the tuple to select the rloc. Using the default rloc");
     }
     pos = hash%src_vec_len; // if hash = 0 then pos = 0
     *src_locator =  src_loc_vec[pos];

@@ -68,7 +68,7 @@ void init_smr(
 
 
 
-    lispd_log_msg(LISP_LOG_DEBUG_2,"*** Init SMR notification ***");
+    LISPD_LOG(LISP_LOG_DEBUG_2,"*** Init SMR notification ***");
 
     /*
      * Check which mappings should be SMRed and put in a list without duplicate elements
@@ -77,7 +77,7 @@ void init_smr(
     iface_list = get_head_interface_list();
 
     if ((mappings_to_smr = (lispd_mapping_elt **)malloc(total_mappings*sizeof(lispd_mapping_elt *))) == NULL){
-        lispd_log_msg(LISP_LOG_WARNING, "init_smr: Unable to allocate memory for lispd_mapping_elt **: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for lispd_mapping_elt **: ", LISPD_ERRNO(errno) );
         return;
     }
     memset (mappings_to_smr,0,total_mappings*sizeof(lispd_mapping_elt *));
@@ -127,9 +127,7 @@ void init_smr(
             map_register(NULL,NULL);
         }
 
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Start SMR for local EID %s/%d",
-                get_char_from_lisp_addr_t(mappings_to_smr[ctr]->eid_prefix),
-                mappings_to_smr[ctr]->eid_prefix_length);
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Start SMR for local EID ", LISPD_MAPPING(mappings_to_smr[ctr]));
 
         /* For each map cache entry with same afi as local EID mapping */
         if (mappings_to_smr[ctr]->eid_prefix.afi ==AF_INET){
@@ -149,10 +147,8 @@ void init_smr(
                     while (locator_iterator){
                         locator = locator_iterator->locator;
                         if (build_and_send_map_request_msg(map_cache_entry->mapping,&(mappings_to_smr[ctr]->eid_prefix),locator->locator_addr,0,0,1,0,&nonce)==GOOD){
-                            lispd_log_msg(LISP_LOG_DEBUG_1, "  SMR'ing RLOC %s from EID %s/%d",
-                                    get_char_from_lisp_addr_t(*(locator->locator_addr)),
-                                    get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix),
-                                    map_cache_entry->mapping->eid_prefix_length);
+                            LISPD_LOG(LISP_LOG_DEBUG_1, "  SMR'ing RLOC ",LISPD_RLOC(get_char_from_lisp_addr_t(*(locator->locator_addr))),
+                                    " from EID ", LISPD_MAPPING( map_cache_entry->mapping ));
                         }
 
                         locator_iterator = locator_iterator->next;
@@ -165,22 +161,18 @@ void init_smr(
 
         while (pitr_elt) {
             if (build_and_send_map_request_msg(mappings_to_smr[ctr],&(mappings_to_smr[ctr]->eid_prefix),pitr_elt->address,0,0,1,0,&nonce)==GOOD){
-                lispd_log_msg(LISP_LOG_DEBUG_1, "  SMR'ing Proxy ITR %s for EID %s/%d",
-                        get_char_from_lisp_addr_t(*(pitr_elt->address)),
-                        get_char_from_lisp_addr_t(mappings_to_smr[ctr]->eid_prefix),
-                        mappings_to_smr[ctr]->eid_prefix_length);
+                LISPD_LOG(LISP_LOG_DEBUG_1, "  SMR'ing Proxy ITR ", LISPD_PITR(get_char_from_lisp_addr_t(*(pitr_elt->address))), "for EID ",
+                        LISPD_MAPPING(mappings_to_smr[ctr]) );
             }else {
-                lispd_log_msg(LISP_LOG_DEBUG_1, "  Coudn't SMR Proxy ITR %s for EID %s/%d",
-                        get_char_from_lisp_addr_t(*(pitr_elt->address)),
-                        get_char_from_lisp_addr_t(mappings_to_smr[ctr]->eid_prefix),
-                        mappings_to_smr[ctr]->eid_prefix_length);
+                LISPD_LOG(LISP_LOG_DEBUG_1, "  Coudn't SMR Proxy ITR ", LISPD_PITR(get_char_from_lisp_addr_t(*(pitr_elt->address))), "for EID ",
+                        LISPD_MAPPING(mappings_to_smr[ctr]) );
             }
             pitr_elt = pitr_elt->next;
         }
 
     }
     free (mappings_to_smr);
-    lispd_log_msg(LISP_LOG_DEBUG_2,"*** Finish SMR notification ***");
+    LISPD_LOG(LISP_LOG_DEBUG_2,"*** Finish SMR notification ***");
 }
 
 
@@ -194,15 +186,15 @@ int solicit_map_request_reply(
     if (map_cache_entry->nonces == NULL){
         map_cache_entry->nonces = new_nonces_list();
         if (map_cache_entry->nonces==NULL){
-            lispd_log_msg(LISP_LOG_ERR,"Send_map_request_miss: Coudn't allocate memory for nonces");
+            LISPD_LOG(LISP_LOG_ERR,"Coudn't allocate memory for nonces");
             return (BAD);
         }
     }
     if (map_cache_entry->nonces->retransmits - 1 < LISPD_MAX_SMR_RETRANSMIT ){
         if (map_cache_entry->nonces->retransmits > 0){
-            lispd_log_msg(LISP_LOG_DEBUG_1,"Retransmiting Map Request SMR Invoked for EID: %s (%d retries)",
-                    get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix),
-                    map_cache_entry->nonces->retransmits);
+            LISPD_LOG(LISP_LOG_DEBUG_1,"Retransmiting Map Request SMR Invoked for EID: ", LISPD_EID(get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix)),
+            " (", LISPD_INTEGER(map_cache_entry->nonces->retransmits)," retries)");
+
         }
         dst_rloc = get_map_resolver();
         if(dst_rloc == NULL ||(build_and_send_map_request_msg(
@@ -214,7 +206,7 @@ int solicit_map_request_reply(
                 0,
                 1,
                 &(map_cache_entry->nonces->nonce[map_cache_entry->nonces->retransmits])))!=GOOD) {
-            lispd_log_msg(LISP_LOG_DEBUG_1, "solicit_map_request_reply: couldn't build/send SMR triggered Map-Request");
+            LISPD_LOG(LISP_LOG_DEBUG_1, "couldn't build/send SMR triggered Map-Request");
         }
         map_cache_entry->nonces->retransmits ++;
         /* Reprograming timer*/
@@ -228,9 +220,7 @@ int solicit_map_request_reply(
         map_cache_entry->nonces = NULL;
         free(map_cache_entry->smr_inv_timer);
         map_cache_entry->smr_inv_timer = NULL;
-        lispd_log_msg(LISP_LOG_DEBUG_1,"SMR process: No Map Reply fot EID %s/%d. Ignoring solicit map request ...",
-                get_char_from_lisp_addr_t(map_cache_entry->mapping->eid_prefix),
-                map_cache_entry->mapping->eid_prefix_length);
+        LISPD_LOG(LISP_LOG_DEBUG_1,"SMR process: No Map Reply fot EID ", LISPD_MAPPING(map_cache_entry->mapping)," Ignoring solicit map request ...");
     }
     return (GOOD);
 }

@@ -3,7 +3,7 @@
  *
  * This file is part of LISP Mobile Node Implementation.
  * External definitions for lispd
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -49,6 +49,7 @@ extern  int                     map_request_retries;
 extern  int                     control_port;
 extern  int                     debug_level;
 extern  int                     daemonize;
+extern  int                     colorize;
 extern  int                     default_rloc_afi;
 extern  int                     rloc_probe_interval;
 extern  int                     rloc_probe_retries;

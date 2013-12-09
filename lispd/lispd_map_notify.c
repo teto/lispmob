@@ -137,11 +137,11 @@ int process_map_notify(uint8_t *packet)
         xTR_ID_msg  = (lispd_xTR_ID *)CO(packet,map_notify_length);
         site_ID_msg = (lispd_site_ID *)CO(packet,map_notify_length + sizeof(lispd_xTR_ID));
         if (memcmp(site_ID_msg, &site_ID, sizeof(lispd_site_ID))!= 0){
-            lispd_log_msg(LISP_LOG_DEBUG_1, "process_map_notify: Site ID of the map notify doesn't match");
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Site ID of the map notify doesn't match");
             return (BAD);
         }
         if (memcmp(xTR_ID_msg, &xTR_ID, sizeof(lispd_xTR_ID))!= 0){
-            lispd_log_msg(LISP_LOG_DEBUG_1, "process_map_notify: xTR ID of the map notify doesn't match");
+            LISPD_LOG(LISP_LOG_DEBUG_1, "xTR ID of the map notify doesn't match");
             return (BAD);
         }
         map_notify_length = map_notify_length + sizeof(lispd_site_ID) + sizeof (lispd_xTR_ID);
@@ -157,18 +157,18 @@ int process_map_notify(uint8_t *packet)
             map_notify_length,
             (uchar *) map_notify->auth_data,
             &md_len)) {
-        lispd_log_msg(LISP_LOG_DEBUG_2, "process_map_notify: HMAC failed for Map-Notify");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "HMAC failed for Map-Notify");
         return(BAD);
     }
     if ((strncmp((char *)map_notify->auth_data, (char *)auth_data, (size_t)LISP_SHA1_AUTH_DATA_LEN)) == 0){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Map-Notify message confirms correct registration");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Map-Notify message confirms correct registration");
         next_timer_time = MAP_REGISTER_INTERVAL;
         free (nat_emr_nonce);
         nat_emr_nonce = NULL;
         result = GOOD;
 
     } else{
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Map-Notify message is invalid");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Map-Notify message is invalid");
         next_timer_time = LISPD_INITIAL_EMR_TIMEOUT;
         result = BAD;
     }

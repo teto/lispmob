@@ -3,7 +3,7 @@
  *
  * This file is part of LISP Mobile Node Implementation.
  * Necessary logic to handle incoming map replies.
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -382,20 +382,18 @@ int process_map_reply_probe_record(
                 }
             }
             if (locator == NULL){
-                lispd_log_msg(LISP_LOG_DEBUG_1,"process_map_reply_probe_record: The nonce of the Negative Map-Reply Probe don't match any nonce of Proxy-ETR locators");
+                LISPD_LOG(LISP_LOG_DEBUG_1,"The nonce of the Negative Map-Reply Probe don't match any nonce of Proxy-ETR locators");
                 free_mapping_elt(mapping, FALSE);
                 return (BAD);
             }
             free_mapping_elt(mapping, FALSE);
         }else{
-            lispd_log_msg(LISP_LOG_DEBUG_1,"process_map_reply_probe_record: The received negative Map-Reply Probe has not been requested: %s/%d",
-                    get_char_from_lisp_addr_t(mapping->eid_prefix),mapping->eid_prefix_length);
+            LISPD_LOG(LISP_LOG_DEBUG_1,"The received negative Map-Reply Probe has not been requested: ",LISPD_MAPPING(mapping));
             free_mapping_elt(mapping, FALSE);
             return (BAD);
         }
 
-        lispd_log_msg(LISP_LOG_DEBUG_1,"Map-Reply probe reachability to the PETR with RLOC %s",
-                    get_char_from_lisp_addr_t(*(locator->locator_addr)));
+        LISPD_LOG(LISP_LOG_DEBUG_1,"Map-Reply probe reachability to the PETR with RLOC ", LISPD_RLOC_A(locator));
     }
 
 
@@ -403,8 +401,7 @@ int process_map_reply_probe_record(
     if (*(locator->state) == DOWN){
         *(locator->state) = UP;
 
-        lispd_log_msg(LISP_LOG_DEBUG_1,"Map-Reply Probe received for locator %s -> Locator state changes to UP",
-                           get_char_from_lisp_addr_t(*(locator->locator_addr)));
+        LISPD_LOG(LISP_LOG_DEBUG_1,"Map-Reply Probe received for locator ",LISPD_RLOC_A( locator )," -> Locator state changes to UP");
 
         /* [re]Calculate balancing locator vectors  if it has been a change of status*/
         calculate_balancing_vectors (
@@ -416,7 +413,7 @@ int process_map_reply_probe_record(
      */
     rmt_locator_ext_inf = (rmt_locator_extended_info *)(locator->extended_info);
     if (rmt_locator_ext_inf->probe_timer == NULL){
-       lispd_log_msg(LISP_LOG_DEBUG_1,"process_map_reply_probe_record: The received Map-Reply Probe was not requested");
+       LISPD_LOG(LISP_LOG_DEBUG_1,"The received Map-Reply Probe was not requested");
        return (BAD);
     }
 
@@ -588,7 +585,7 @@ int build_and_send_map_reply_msg(
     free (map_reply_pkt);
 
     if (packet == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_1,"build_and_send_map_reply_msg: Couldn't send Map Reply. Error adding IP and UDP header to the message");
+        LISPD_LOG(LISP_LOG_DEBUG_1,"Couldn't send Map Reply. Error adding IP and UDP header to the message");
         return (BAD);
     }
 
@@ -597,21 +594,17 @@ int build_and_send_map_reply_msg(
 
     if ((err = send_packet(out_socket,packet,packet_len)) == GOOD){
         if (opts.rloc_probe == TRUE){
-            lispd_log_msg(LISP_LOG_DEBUG_1, "Sent Map-Reply packet for %s/%d probing local locator %s",
-                    get_char_from_lisp_addr_t(requested_mapping->eid_prefix),
-                    requested_mapping->eid_prefix_length,
-                    get_char_from_lisp_addr_t(*src_rloc_addr));
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Sent Map-Reply packet for ", LISPD_MAPPING(requested_mapping) , "probing local locator ", LISPD_RLOC(get_char_from_lisp_addr_t(*src_rloc_addr))
+                    );
         }else{
-            lispd_log_msg(LISP_LOG_DEBUG_1, "Sent Map-Reply packet for %s/%d",
-                    get_char_from_lisp_addr_t(requested_mapping->eid_prefix),
-                    requested_mapping->eid_prefix_length);
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Sent Map-Reply packet for ",LISPD_MAPPING(requested_mapping) );
         }
         result = GOOD;
     }else {
         if (opts.rloc_probe == TRUE){
-            lispd_log_msg(LISP_LOG_DEBUG_1, "Couldn't build/send Probe Reply!");
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Couldn't build/send Probe Reply!");
         }else{
-            lispd_log_msg(LISP_LOG_DEBUG_1, "Couldn't build/send Map-Reply!");
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Couldn't build/send Map-Reply!");
         }
         result = BAD;
     }
@@ -634,8 +627,7 @@ uint8_t *build_map_reply_pkt(lispd_mapping_elt *mapping,
             pkt_get_mapping_record_length(mapping);
 
     if ((packet = malloc(*map_reply_msg_len)) == NULL) {
-        lispd_log_msg(LISP_LOG_WARNING, "build_map_reply_pkt: Unable to allocate memory for  Map Reply message(%d) %s",
-                *map_reply_msg_len, strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for  Map Reply message(", LISPD_INTEGER(*map_reply_msg_len),") ", LISPD_ERRNO(errno));
         return(NULL);
     }
     memset(packet, 0, *map_reply_msg_len);

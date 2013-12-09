@@ -74,21 +74,28 @@ lispd_item_last     /* always keep it last, used as counter */
 
 
 // TODO if there is an empty parameter, then the next one is already expanded
-
 #define LISPD_INTEGER( integer )  ( 0,lispd_item_integer, integer, 0)
 #define LISPD_EID( ip )  ( (ip),lispd_item_eid, 0, 0)
+#define LISPD_EIDA( ip )  ( get_char_from_lisp_addr_t(ip),lispd_item_eid, 0, 0)
+// convert into 3 parameters ? set mask __VA_ARGS__
+#define LISPD_MAPPING( mapping )  LISPD_EID(get_char_from_lisp_addr_t( (mapping)->eid_prefix) ),"/", LISPD_INTEGER( (mapping)->eid_prefix_length  )
+//#define LISPD_MAPPING( mapping )  ( get_char_from_lisp_addr_t( (mapping)->eid_prefix),lispd_item_eid, 0, 0),"/",( 0,lispd_item_integer, integer, 0)
 #define LISPD_RLOC( ip ) ( (ip), lispd_item_rloc, 0,0)
+#define LISPD_RLOC_A( locator ) ( (get_char_from_lisp_addr_t(*(locator->locator_addr))), lispd_item_rloc, 0,0)
 //    #define LISPD_PORT( port )  lispd_color_output( 0, port,  col_port)
 //    #define LISPD_MASK( mask)  lispd_color_output( 0, mask,  col_port)
 #define LISPD_PORT( port )  (port)
 #define LISPD_MASK( mask)   (mask)
 #define LISPD_FILENAME( filename )  lispd_color_output(filename , 0, col_filename)
-#define LISPD_IFNAME( if_name) if_name
+#define LISPD_IFNAME( if_name)  (if_name)
 #define LISPD_MS( ip ) LISPD_RLOC( ip)
 #define LISPD_MR( ip ) LISPD_RLOC( ip)
+#define LISPD_AFI( afi ) LISPD_INTEGER( afi)
 #define LISPD_PETR( host ) LISPD_RLOC(host)
 #define LISPD_PITR( host ) LISPD_RLOC(host)
-#define LISPD_LOG_DESCRIPTOR( descriptor ) lispd_color_output(descriptor.log_name , 0, descriptor.color )
+#define LISPD_ERRNO( errno ) strerror(errno)
+#define LISPD_TIMER( errno ) LISPD_INTEGER(errno)
+//#define LISPD_LOG_DESCRIPTOR( descriptor ) lispd_color_output(descriptor.log_name , 0, descriptor.color )
 
 
 
@@ -128,6 +135,8 @@ lispd_item_last     /* always keep it last, used as counter */
 #define CONCAT(a, b) a##b
 
 /* Add more if needed */
+#define LISP_LOG19( arg1, ... )  LISP_LOG1(arg1) LISP_LOG18( __VA_ARGS__)
+#define LISP_LOG18( arg1, ... )  LISP_LOG1(arg1) LISP_LOG17( __VA_ARGS__)
 #define LISP_LOG17( arg1, ... )  LISP_LOG1(arg1) LISP_LOG16( __VA_ARGS__)
 #define LISP_LOG16( arg1, ... )  LISP_LOG1(arg1) LISP_LOG15( __VA_ARGS__)
 #define LISP_LOG15( arg1, ... )  LISP_LOG1(arg1) LISP_LOG14( __VA_ARGS__)
@@ -144,10 +153,11 @@ lispd_item_last     /* always keep it last, used as counter */
 #define LISP_LOG4( arg1, ... )  LISP_LOG1(arg1) LISP_LOG3( __VA_ARGS__)
 #define LISP_LOG3( arg1, ... )  LISP_LOG1(arg1) LISP_LOG2(__VA_ARGS__)
 #define LISP_LOG2( arg1, arg2 )  LISP_LOG1(arg1) LISP_LOG1(arg2)
-#define LISP_LOG1( arg1 ) lispd_logger.append_to_entry(entry, LISPD_ENTRY_EXPAND( arg1) );
+#define LISP_LOG1( arg1 ) lispd_logger.append_to_entry( lispd_log_entry_, LISPD_ENTRY_EXPAND( arg1) );
 
 /* Should not be called like this */
 #define LISP_LOG0( level, ...)  "Needs format"
+
 
 /* last argument is empty __LINE__*/
 #ifdef LISPD_DEBUG
@@ -156,11 +166,12 @@ lispd_item_last     /* always keep it last, used as counter */
     #define LISPD_LOG(level, ...) LISPD_LOG_FINAL(level, __VA_ARGS__ )
 #endif
 
+//#define LISPD_LOG_FINAL(lispd_log_level,  ...) LISPD_LOG_FINAL_(lispd_log_level, __VA_ARGS__)
 #define LISPD_LOG_FINAL( lispd_log_level,  ... )  do { \
-                                               lispd_log_entry_t *entry = lispd_logger.new_entry(lispd_log_level); \
-                                               if( !entry ) break; \
+                                               lispd_log_entry_t *lispd_log_entry_ = lispd_logger.new_entry(lispd_log_level); \
+                                               if( !lispd_log_entry_ ) break; \
                                               LISPD_CALL_ADEQUATE_LOG( VA_NUM_ARGS(__VA_ARGS__) , __VA_ARGS__) \
-                                            lispd_logger.close_entry(entry); \
+                                            lispd_logger.close_entry(lispd_log_entry_); \
                                         } while(0)
 
 
@@ -182,6 +193,7 @@ LISP_LOG_DEBUG_2  ,          /* medium debug-level messages -> Errors in receive
 LISP_LOG_DEBUG_3             /* high debug-level messages -> Log for each received or generated packet */
 } lispd_log_level_t;
 
+// TODO try adding const
 typedef struct {
 const char* log_name;
 int syslog_log_level;
@@ -196,9 +208,6 @@ typedef struct {
 char str[ MAX_STRING_LENGTH ];
 lispd_log_level_t log_level;
 lispd_log_descriptor_t log_descriptor;
-#ifdef LISPD_ENABLE_COLORS
-int enable_color;   /* */
-#endif
 } lispd_log_entry_t;
 
 
@@ -208,7 +217,7 @@ int (*start_logger)(const char *data);     /* data passed on via cli or config f
 int (*close_logger)(void *data);
 lispd_log_entry_t* (*new_entry)(const lispd_log_level_t lispd_log_level);
 void (*close_entry)(lispd_log_entry_t *entry);
-void (*append_to_entry)(lispd_log_entry_t *entry, const lispd_log_item_type_t type, const char* str, int integer, void *data);
+void (*append_to_entry)(lispd_log_entry_t *entry, const lispd_log_item_type_t type, const char* str, const int integer, void *data);
 } lispd_log_ops_t;
 
 /** KEPT for retrocompatibility, remove once the new logger is ok **/

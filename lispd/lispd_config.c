@@ -121,6 +121,20 @@ void handle_lispd_command_line(
     if (args_info.config_file_given) {
         config_file = strdup(args_info.config_file_arg);
     }
+    if (args_info.color_given) {
+        if( 0 == strcasecmp(args_info.color_arg,"always") ) {
+            colorize= TRUE;
+        }
+        else if(0 == strcasecmp(args_info.color_arg,"never")){
+            colorize= FALSE;
+        }
+        /* Auto mode */
+        else {
+            colorize = (isatty( fileno(stdout) ) );
+        }
+
+    }
+
     if (args_info.debug_given) {
         debug_level = args_info.debug_arg;
     }else{
@@ -135,12 +149,14 @@ void handle_lispd_command_line(
             default_rloc_afi = AF_INET6;
             break;
         default:
-            lispd_log_msg(LISP_LOG_INFO,"AFI must be IPv4 (-a 4) or IPv6 (-a 6)\n");
+            LISPD_LOG(LISP_LOG_INFO,"AFI must be IPv4 (-a 4) or IPv6 (-a 6)\n");
             break;
         }
     }else{
         default_rloc_afi = -1;
     }
+
+    LISPD_LOG(LISP_LOG_INFO, "Colorization ", LISPD_INTEGER(colorize) );
 }
 
 
@@ -546,10 +562,10 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
     ret = cfg_parse(cfg, lispdconf_conf_file);
 
     if (ret == CFG_FILE_ERROR) {
-        lispd_log_msg(LISP_LOG_CRIT, "Couldn't find config file ", config_file, "exiting..." );
+        LISPD_LOG(LISP_LOG_CRIT, "Couldn't find config file ", config_file, "exiting..." );
         exit_cleanup();
     } else if(ret == CFG_PARSE_ERROR) {
-        lispd_log_msg(LISP_LOG_CRIT, "Parse error in file %s, exiting. Check conf file (see lispd.conf.example)", config_file);
+        LISPD_LOG(LISP_LOG_CRIT, "Parse error in file ",config_file,", exiting. Check conf file (see lispd.conf.example)");
         exit_cleanup();
     }
 
@@ -589,8 +605,8 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
 
         validate_rloc_probing_parameters (probe_int, probe_retries, probe_retries_interval);
     }else{
-        lispd_log_msg(LISP_LOG_DEBUG_1, "Configuration file: RLOC probing not defined. "
-                "Setting default values: RLOC Probing Interval: %d sec.",RLOC_PROBING_INTERVAL);
+        LISPD_LOG(LISP_LOG_DEBUG_1, "Configuration file: RLOC probing not defined. "
+                "Setting default values: RLOC Probing Interval: ",LISPD_INTEGER(RLOC_PROBING_INTERVAL)," sec.");
     }
 
 
@@ -604,11 +620,11 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
         nat_xTR_ID  = cfg_getstr(nt, "xTR_ID");
         if (nat_aware == TRUE){
             if ((convert_hex_string_to_bytes(nat_site_ID,site_ID.byte,8)) != GOOD){
-                lispd_log_msg(LISP_LOG_CRIT, "Configuration file: Wrong Site-ID format");
+                LISPD_LOG(LISP_LOG_CRIT, "Configuration file: Wrong Site-ID format");
                 exit_cleanup();
             }
             if ((convert_hex_string_to_bytes(nat_xTR_ID,xTR_ID.byte,16)) != GOOD){
-                lispd_log_msg(LISP_LOG_CRIT, "Configuration file: Wrong xTR-ID format");
+                LISPD_LOG(LISP_LOG_CRIT, "Configuration file: Wrong xTR-ID format");
                 exit_cleanup();
             }
         }
@@ -649,9 +665,9 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
         if (add_proxy_etr_entry(cfg_getstr(petr, "address"),
                 cfg_getint(petr, "priority"),
                 cfg_getint(petr, "weight")) == GOOD) {
-            lispd_log_msg(LISP_LOG_DEBUG_1, "Added %s to proxy-etr list", cfg_getstr(petr, "address"));
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Added ",LISPD_RLOC(cfg_getstr(petr, "address"))," to proxy-etr list" );
         } else{
-            lispd_log_msg(LISP_LOG_ERR, "Can't add proxy-etr %s", cfg_getstr(petr, "address"));
+            LISPD_LOG(LISP_LOG_ERR, "Can't add proxy-etr ", LISPD_RLOC( cfg_getstr(petr, "address")) );
         }
     }
 
@@ -664,9 +680,9 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
     for(i = 0; i < n; i++) {
         if ((proxy_itr = cfg_getnstr(cfg, "proxy-itrs", i)) != NULL) {
             if (add_server(proxy_itr, &proxy_itrs)==GOOD){
-                lispd_log_msg(LISP_LOG_DEBUG_1, "Added %s to proxy-itr list", proxy_itr);
+                LISPD_LOG(LISP_LOG_DEBUG_1, "Added ", LISPD_RLOC(proxy_itr)," to proxy-itr list");
             }else {
-                lispd_log_msg(LISP_LOG_ERR, "Can't add %s to proxy-itr list. Discarded ...", proxy_itr);
+                LISPD_LOG(LISP_LOG_ERR, "Can't add ", LISPD_RLOC(proxy_itr)," to proxy-itr list. Discarded ...");
             }
         }
     }
@@ -687,11 +703,9 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
                 cfg_getint(dm, "priority_v6"),
                 cfg_getint(dm, "weight_v6")) == GOOD
         ) {
-            lispd_log_msg(LISP_LOG_DEBUG_1, "Added EID %s in the database.",
-                    cfg_getstr(dm, "eid-prefix"));
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Added EID ",LISPD_EID(cfg_getstr(dm, "eid-prefix"))," in the database.");
         }else{
-            lispd_log_msg(LISP_LOG_ERR, "Can't add database-mapping %s. Discarded ...",
-                    cfg_getstr(dm, "eid-prefix"));
+            LISPD_LOG(LISP_LOG_ERR, "Can't add database-mapping ",LISPD_EID(cfg_getstr(dm, "eid-prefix")),". Discarded ...");
         }
 
     }
@@ -708,9 +722,9 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
                 cfg_getstr(ms, "key"),
                 (cfg_getbool(ms, "proxy-reply") ? 1:0))== GOOD
         ){
-            lispd_log_msg(LISP_LOG_DEBUG_1, "Added %s to map-server list",cfg_getstr(ms, "address"));
+            LISPD_LOG(LISP_LOG_DEBUG_1, "Added ", LISPD_RLOC( cfg_getstr(ms, "address") ), " to map-server list");
         }else {
-            lispd_log_msg(LISP_LOG_WARNING, "Can't add %s Map Server.",cfg_getstr(ms, "address"));
+            LISPD_LOG(LISP_LOG_WARNING, "Can't add ", LISPD_RLOC( cfg_getstr(ms, "address") )," Map Server.");
         }
     }
 
@@ -733,33 +747,31 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
                     cfg_getstr(smc, "eid-prefix"),
                     cfg_getstr(smc, "rloc"));
         }else{
-            lispd_log_msg(LISP_LOG_DEBUG_1,"Added static-map-cache (EID:%s -> RLOC:%s)",
-                    cfg_getstr(smc, "eid-prefix"),
-                    cfg_getstr(smc, "rloc"));
+            LISPD_LOG(LISP_LOG_DEBUG_1,"Added static-map-cache (EID:", LISPD_EID(cfg_getstr(smc, "eid-prefix")) ," -> RLOC: ", LISPD_RLOC(cfg_getstr(smc, "rloc") ),")");
         }
     }
 
     /* Check configured parameters when NAT-T activated. These limitations will be removed in future release */
     if (nat_aware == TRUE){
         if (ctr > 1){
-            lispd_log_msg(LISP_LOG_CRIT,"NAT aware on -> This version of LISPmob is limited to one EID prefix "
+            LISPD_LOG(LISP_LOG_CRIT,"NAT aware on -> This version of LISPmob is limited to one EID prefix "
                     "and one interface when NAT-T is enabled");
             exit_cleanup();
         }
 
         if (map_servers->next != NULL || map_servers->address->afi != AF_INET){
-            lispd_log_msg(LISP_LOG_INFO,"NAT aware on -> This version of LISPmob is limited to one IPv4 Map Server.");
+            LISPD_LOG(LISP_LOG_INFO,"NAT aware on -> This version of LISPmob is limited to one IPv4 Map Server.");
             exit_cleanup();
         }
 
         if (map_resolvers->next != NULL || map_resolvers->address->afi != AF_INET){
-            lispd_log_msg(LISP_LOG_INFO,"NAT aware on -> This version of LISPmob is limited to one IPv4 Map Resolver.");
+            LISPD_LOG(LISP_LOG_INFO,"NAT aware on -> This version of LISPmob is limited to one IPv4 Map Resolver.");
             exit_cleanup();
         }
 
         if (rloc_probe_interval > 0){
             rloc_probe_interval = 0;
-            lispd_log_msg(LISP_LOG_INFO,"NAT aware on -> disabling RLOC Probing");
+            LISPD_LOG(LISP_LOG_INFO,"NAT aware on -> disabling RLOC Probing");
         }
     }
 
@@ -1042,7 +1054,7 @@ int add_server(
     lispd_addr_list_t   *list_elt;
 
     if ((addr = malloc(sizeof(lisp_addr_t))) == NULL) {
-        lispd_log_msg(LISP_LOG_WARNING, "add_server: Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for lisp_addr_t: ", LISPD_ERRNO(errno));
         return(ERR_MALLOC);
     }
     memset(addr,0,sizeof(lisp_addr_t));
@@ -1051,7 +1063,7 @@ int add_server(
     addr->afi = afi;
 
     if (inet_pton(afi, server, &(addr->address)) != 1) {
-        lispd_log_msg(LISP_LOG_ERR, "add_server: Wrong address format: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_ERR, "Wrong address format: ", LISPD_ERRNO(errno));
         free(addr);
         return(BAD);
     }
@@ -1060,13 +1072,13 @@ int add_server(
      * Check that the afi of the map server matches with the default rloc afi (if it's defined).
      */
     if (default_rloc_afi != -1 && default_rloc_afi != addr->afi){
-        lispd_log_msg(LISP_LOG_WARNING, "The server %s will not be added due to the selected default rloc afi",server);
+        LISPD_LOG(LISP_LOG_WARNING, "The server ",server," will not be added due to the selected default rloc afi");
         free(addr);
         return(BAD);
     }
 
     if ((list_elt = malloc(sizeof(lispd_addr_list_t))) == NULL) {
-        lispd_log_msg(LISP_LOG_WARNING, "add_server: Unable to allocate memory for lispd_addr_list_t: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for lispd_addr_list_t: ", LISPD_ERRNO(errno));
         free(addr);
         return(BAD);
     }
@@ -1104,12 +1116,12 @@ int add_map_server(
     struct hostent          *hptr;
 
     if (map_server == NULL || key_type == 0 || key == NULL){
-        lispd_log_msg(LISP_LOG_ERR, "Configuraton file: Wrong Map Server configuration.  Check configuration file");
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: Wrong Map Server configuration.  Check configuration file");
         exit_cleanup();
     }
 
     if ((addr = malloc(sizeof(lisp_addr_t))) == NULL) {
-        lispd_log_msg(LISP_LOG_WARNING, "add_map_server: Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "add_map_server: Unable to allocate memory for lisp_addr_t: ", LISPD_ERRNO(errno));
         return(BAD);
     }
 
@@ -1122,7 +1134,7 @@ int add_map_server(
 
     if (((hptr = gethostbyname2(map_server,AF_INET))  == NULL) &&
             ((hptr = gethostbyname2(map_server,AF_INET6)) == NULL)) {
-        lispd_log_msg(LISP_LOG_WARNING, "can gethostbyname2 for map_server (%s)", map_server);
+        LISPD_LOG(LISP_LOG_WARNING, "can gethostbyname2 for map_server (", LISPD_MS(map_server),")");
         free(addr);
         return(BAD);
     }
@@ -1136,13 +1148,13 @@ int add_map_server(
      * Check that the afi of the map server matches with the default rloc afi (if it's defined).
      */
     if (default_rloc_afi != -1 && default_rloc_afi != addr->afi){
-        lispd_log_msg(LISP_LOG_WARNING, "The map server %s will not be added due to the selected default rloc afi",map_server);
+        LISPD_LOG(LISP_LOG_WARNING, "The map server ", LISPD_MS(map_server)," will not be added due to the selected default rloc afi");
         free(addr);
         return(BAD);
     }
 
     if ((list_elt = malloc(sizeof(lispd_map_server_list_t))) == NULL) {
-        lispd_log_msg(LISP_LOG_WARNING, "add_map_server: Unable to allocate memory for lispd_map_server_list_t: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "Unable to allocate memory for lispd_map_server_list_t: %s", LISPD_ERRNO(errno));
         free(addr);
         return(BAD);
     }
@@ -1185,18 +1197,18 @@ int add_proxy_etr_entry(
     lispd_locator_elt               *locator     = NULL;
 
     if (address == NULL){
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: The address of the Proxy ETR has not been specified. Discarding the entry");
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: The address of the Proxy ETR has not been specified. Discarding the entry");
         return (BAD);
     }
 
     /* Check the parameters */
     if (priority > 255 || priority < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Priority %d out of range [0..255]", priority);
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: Priority ", LISPD_INTEGER(priority)," out of range [0..255]");
         return (BAD);
     }
 
     if (weight > 100 || weight < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "Configuration file: Weight %d out of range [0..100]", priority);
+        LISPD_LOG(LISP_LOG_ERR, "Configuration file: Weight ", LISPD_INTEGER(priority)," out of range [0..100]");
         return (BAD);
     }
 
@@ -1204,7 +1216,7 @@ int add_proxy_etr_entry(
      * Check that the afi of the map server matches with the default rloc afi (if it's defined).
      */
     if (default_rloc_afi != -1 && default_rloc_afi != get_afi(address)){
-        lispd_log_msg(LISP_LOG_WARNING, "The proxy etr %s will not be added due to the selected default rloc afi",address);
+        LISPD_LOG(LISP_LOG_WARNING, "The proxy etr ", LISPD_PETR(address)," will not be added due to the selected default rloc afi");
         return(BAD);
     }
 
@@ -1244,21 +1256,19 @@ void validate_rloc_probing_parameters (
         rloc_probe_interval = probe_int;
     }
     if (rloc_probe_interval > 0){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "RLOC Probing Interval: %d", rloc_probe_interval);
+        LISPD_LOG(LISP_LOG_DEBUG_1, "RLOC Probing Interval: ", LISPD_INTEGER(rloc_probe_interval) );
     }else{
-        lispd_log_msg(LISP_LOG_DEBUG_1, "RLOC Probing dissabled");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "RLOC Probing disabled");
     }
 
     if (rloc_probe_interval != 0){
 
         if(probe_retries > LISPD_MAX_RETRANSMITS){
             rloc_probe_retries = LISPD_MAX_RETRANSMITS;
-            lispd_log_msg(LISP_LOG_WARNING, "RLOC Probing retries should be between 0 and %d. Using %d retries",
-                    LISPD_MAX_RETRANSMITS, LISPD_MAX_RETRANSMITS);
+            LISPD_LOG(LISP_LOG_WARNING, "RLOC Probing retries should be between 0 and  ", LISPD_INTEGER(LISPD_MAX_RETRANSMITS) ,". Using  ", LISPD_INTEGER(LISPD_MAX_RETRANSMITS) ," retries");
         }else if (probe_retries < 0){
             rloc_probe_retries = 0;
-            lispd_log_msg(LISP_LOG_WARNING, "RLOC Probing retries should be between 0 and %d. Using 0 retries",
-                    LISPD_MAX_RETRANSMITS);
+            LISPD_LOG(LISP_LOG_WARNING, "RLOC Probing retries should be between 0 and ", LISPD_INTEGER(LISPD_MAX_RETRANSMITS) ,". Using 0 retries");
         }else{
             rloc_probe_retries = probe_retries;
         }
@@ -1266,12 +1276,12 @@ void validate_rloc_probing_parameters (
         if (rloc_probe_retries > 0){
             if (probe_retries_interval < LISPD_MIN_RETRANSMIT_INTERVAL){
                 rloc_probe_retries_interval = LISPD_MIN_RETRANSMIT_INTERVAL;
-                lispd_log_msg(LISP_LOG_WARNING, "RLOC Probing interval retries should be between %d and RLOC Probing interval. Using %d seconds",
-                        LISPD_MIN_RETRANSMIT_INTERVAL,LISPD_MIN_RETRANSMIT_INTERVAL);
+                LISPD_LOG(LISP_LOG_WARNING, "RLOC Probing interval retries should be between  ", LISPD_INTEGER(LISPD_MIN_RETRANSMIT_INTERVAL) ,
+                        " and RLOC Probing interval. Using  ", LISPD_INTEGER(LISPD_MIN_RETRANSMIT_INTERVAL) ," seconds" );
             }else if(probe_retries_interval > rloc_probe_interval){
                 rloc_probe_retries_interval = rloc_probe_interval;
-                lispd_log_msg(LISP_LOG_WARNING, "RLOC Probing interval retries should be between %d and RLOC Probing interval. Using %d seconds",
-                        LISPD_MIN_RETRANSMIT_INTERVAL,rloc_probe_interval);
+                LISPD_LOG(LISP_LOG_WARNING, "RLOC Probing interval retries should be between ", LISPD_INTEGER(LISPD_MIN_RETRANSMIT_INTERVAL) ,
+                        " and RLOC Probing interval. Using ", LISPD_INTEGER(rloc_probe_interval) ," seconds");
             }else{
                 rloc_probe_retries_interval = probe_retries_interval;
             }

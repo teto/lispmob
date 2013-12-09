@@ -3,7 +3,7 @@
  *
  * This file is part of LISP Mobile Node Implementation.
  * Implementation for UDP checksum.
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +39,7 @@ uint16_t ip_checksum(
     int      size)
 {
     uint32_t cksum = 0;
-    
+
     while (size > 1) {
         cksum += *buffer++;
         size -= sizeof(uint16_t);
@@ -51,12 +51,12 @@ uint16_t ip_checksum(
 
     cksum  = (cksum >> 16) + (cksum & 0xffff);
     cksum += (cksum >> 16);
-    
+
     return ((uint16_t)(~cksum));
 }
 
 
-/*    
+/*
  *
  *	Calculate the IPv4 UDP checksum (calculated with the whole packet).
  *
@@ -90,28 +90,28 @@ uint16_t udp_ipv4_checksum (
 	    sum = (sum & 0xFFFF) + (sum >> 16);
 	len -= 2;
     }
- 
+
     /* Add the padding if the packet length is odd */
 
     if (len & 1)
 	sum += *((uint8_t *)buf);
- 
+
     /* Add the pseudo-header */
 
     sum += *(ip_src++);
     sum += *ip_src;
- 
+
     sum += *(ip_dst++);
     sum += *ip_dst;
- 
+
     sum += htons(IPPROTO_UDP);
     sum += htons(length);
- 
+
     /* Add the carries */
 
     while (sum >> 16)
 	sum = (sum & 0xFFFF) + (sum >> 16);
- 
+
     /* Return the one's complement of sum */
 
     return ((uint16_t)(~sum));
@@ -185,7 +185,7 @@ uint16_t udp_checksum (
     case AF_INET6:
         return(udp_ipv6_checksum(iphdr, udph, udp_len));
     default:
-        lispd_log_msg(LISP_LOG_DEBUG_2, "udp_checksum: Unknown AFI");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "udp_checksum: Unknown AFI");
         return(-1);
     }
 }
@@ -230,7 +230,7 @@ int compute_sha1_hmac(char *key,
               pckt_len,
               (uchar *) auth_data_pos,
               &md_len)) {
-        lispd_log_msg(LISP_LOG_DEBUG_2, "HMAC failed");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "HMAC failed");
 
         return (BAD);
     }
@@ -284,7 +284,7 @@ int check_sha1_hmac(char *key,
 
     auth_data_copy = (uint8_t *) malloc(auth_data_len*sizeof(uint8_t));
     if (auth_data_copy == NULL) {
-        lispd_log_msg(LISP_LOG_ERR, "check_sha1_hmac: malloc() failed");
+        LISPD_LOG(LISP_LOG_ERR, "malloc() failed");
         return(BAD);
     }
 
@@ -299,7 +299,7 @@ int check_sha1_hmac(char *key,
               pckt_len,
               (uchar *) auth_data_pos,
               &md_len)) {
-        lispd_log_msg(LISP_LOG_DEBUG_2, "SHA1 HMAC failed");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "SHA1 HMAC failed");
         free(auth_data_copy);
         return(BAD);
     }

@@ -153,7 +153,7 @@ lispd_mapping_elt *new_map_cache_mapping(
     }
 
     if ((extended_info=(rmt_mapping_extended_info *)malloc(sizeof(rmt_mapping_extended_info)))==NULL){
-        lispd_log_msg(LISP_LOG_WARNING,"new_rmt_mapping: Couldn't allocate memory for lcl_mapping_extended_info: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING,"Couldn't allocate memory for lcl_mapping_extended_info: ", LISPD_ERRNO(errno));
         free (mapping);
         return (NULL);
     }
@@ -198,16 +198,12 @@ int add_locator_to_mapping(
 
     if (err == GOOD){
         mapping->locator_count++;
-        lispd_log_msg(LISP_LOG_DEBUG_2, "add_locator_to_mapping: The locator %s has been added to the EID %s/%d.",
-                get_char_from_lisp_addr_t(*(locator->locator_addr)),
-                get_char_from_lisp_addr_t(mapping->eid_prefix),
-                mapping->eid_prefix_length);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "The locator ", LISPD_RLOC(get_char_from_lisp_addr_t(*(locator->locator_addr))), " has been added to the EID ",
+            LISPD_EID(get_char_from_lisp_addr_t(mapping->eid_prefix) ), "/", LISPD_INTEGER(mapping->eid_prefix_length) );
         result = GOOD;
     }else if (err == ERR_EXIST){
-        lispd_log_msg(LISP_LOG_DEBUG_2, "add_locator_to_mapping: The locator %s already exists for the EID %s/%d.",
-                get_char_from_lisp_addr_t(*(locator->locator_addr)),
-                get_char_from_lisp_addr_t(mapping->eid_prefix),
-                mapping->eid_prefix_length);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "The locator ", LISPD_RLOC(get_char_from_lisp_addr_t(*(locator->locator_addr))), " already exists for the EID ",
+                LISPD_EID(get_char_from_lisp_addr_t(mapping->eid_prefix) ), "/", LISPD_INTEGER(mapping->eid_prefix_length) );
         free_locator (locator);
         result = GOOD;
     }else{
@@ -250,7 +246,7 @@ void sort_locators_list_elt (
     }
 
     if (current_locators_list_elt == NULL){
-        lispd_log_msg(LISP_LOG_DEBUG_1, "sort_locators_list_elt: It should nevear reach this point");
+        LISPD_LOG(LISP_LOG_DEBUG_1, "It should nevear reach this point");
         return;
     }
 

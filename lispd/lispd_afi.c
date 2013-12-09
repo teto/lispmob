@@ -70,7 +70,7 @@ int pkt_process_eid_afi(
             break;
         default:
             mapping->eid_prefix.afi = -1;
-            lispd_log_msg(LISP_LOG_DEBUG_2,"pkt_process_eid_afi:  Unknown LCAF type %d in EID", lcaf_ptr->type);
+            LISPD_LOG(LISP_LOG_DEBUG_2,"Unknown LCAF type ",LISPD_INTEGER(lcaf_ptr->type)," in EID");
             return (BAD);
         }
         break;
@@ -79,7 +79,7 @@ int pkt_process_eid_afi(
         break;
     default:
         mapping->eid_prefix.afi = -1;
-        lispd_log_msg(LISP_LOG_DEBUG_2,"pkt_process_eid_afi:  Unknown AFI type %d in EID", lisp_afi);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"pkt_process_eid_afi:  Unknown AFI type ",LISPD_INTEGER(lisp_afi)," in EID");
         return (BAD);
     }
     *offset = cur_ptr;
@@ -112,10 +112,10 @@ int pkt_process_rloc_afi(
         cur_ptr  = CO(cur_ptr, sizeof(struct in6_addr));
         break;
     case LISP_AFI_LCAF:
-        lispd_log_msg(LISP_LOG_DEBUG_2,"pkt_process_rloc_afi: LCAF address is not supported in locators");
+        LISPD_LOG(LISP_LOG_DEBUG_2,"LCAF address is not supported in locators");
         return (BAD);
     default:
-        lispd_log_msg(LISP_LOG_DEBUG_2,"pkt_process_rloc_afi: Unknown AFI type %d in locator", lisp_afi);
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Unknown AFI type ", LISPD_INTEGER(lisp_afi)," in locator");
         return (BAD);
     }
     *offset = cur_ptr;
@@ -146,7 +146,7 @@ int extract_nat_lcaf_data(
     pkt_lcaf = (lispd_pkt_lcaf_t *)ptr;
 
     if (pkt_lcaf->type != LCAF_NATT){
-        lispd_log_msg(LISP_LOG_DEBUG_2, "extract_nat_lcaf_data: Packet doesn't have NAT LCAF address");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "Packet doesn't have NAT LCAF address");
         return (BAD);
     }
 
@@ -166,7 +166,7 @@ int extract_nat_lcaf_data(
 
 
     if ((extract_lisp_address(ptr, global_etr_rloc)) != GOOD){
-        lispd_log_msg(LISP_LOG_DEBUG_2, "extract_nat_lcaf_data: Couldn't process Global ETR RLOC");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "Couldn't process Global ETR RLOC");
         return (BAD);
     }
 
@@ -177,7 +177,7 @@ int extract_nat_lcaf_data(
     /* Extract the MS RLOC */
 
     if ((extract_lisp_address(ptr, ms_rloc)) != GOOD){
-        lispd_log_msg(LISP_LOG_DEBUG_2, "extract_nat_lcaf_data: Couldn't process MS RLOC");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "Couldn't process MS RLOC");
         return (BAD);
     }
 
@@ -188,7 +188,7 @@ int extract_nat_lcaf_data(
     /* Extract the Private ETR RLOC */
 
     if (extract_lisp_address(ptr, private_etr_rloc) != GOOD){
-        lispd_log_msg(LISP_LOG_DEBUG_2, "extract_nat_lcaf_data: Couldn't process private ETR RLOC");
+        LISPD_LOG(LISP_LOG_DEBUG_2, "Couldn't process private ETR RLOC");
         return (BAD);
     }
 
@@ -202,16 +202,16 @@ int extract_nat_lcaf_data(
 
     while (cumulative_add_length < lcaf_length) {
         if ((extract_lisp_address(ptr, &rtr_address))!= GOOD){
-            lispd_log_msg(LISP_LOG_DEBUG_2, "extract_nat_lcaf_data: Coudln't process rtr address");
+            LISPD_LOG(LISP_LOG_DEBUG_2, "Coudln't process rtr address");
             return (BAD);
         }
         rtr_locator = new_rtr_locator (rtr_address);
         if (rtr_locator == NULL){
-            lispd_log_msg(LISP_LOG_DEBUG_2, "extract_nat_lcaf_data: Error malloc lispd_rtr_locator");
+            LISPD_LOG(LISP_LOG_DEBUG_2, "Error malloc lispd_rtr_locator");
             return (BAD);
         }
         if ((add_rtr_locator_to_list(&rtr_locator_list,rtr_locator))!=GOOD){
-            lispd_log_msg(LISP_LOG_DEBUG_2, "extract_nat_lcaf_data: Error adding rtr_locator");
+            LISPD_LOG(LISP_LOG_DEBUG_2, "Error adding rtr_locator");
             return (BAD);
         }
         // Return the first element of the list
@@ -219,8 +219,7 @@ int extract_nat_lcaf_data(
             *rtr_list = rtr_locator_list;
         }
 
-        lispd_log_msg(LISP_LOG_DEBUG_3, "Added RTR with RLOC %s to the list of RTRs",
-                get_char_from_lisp_addr_t(rtr_locator->address));
+        LISPD_LOG(LISP_LOG_DEBUG_3, "Added RTR with RLOC ", LISPD_RLOC(get_char_from_lisp_addr_t(rtr_locator->address))," to the list of RTRs");
 
         cumulative_add_length += get_addr_len(rtr_locator->address.afi) + FIELD_AFI_LEN;
 

@@ -55,22 +55,22 @@ lispd_iface_elt *add_interface(char *iface_name)
 
     /* Creating the new interface*/
     if ((iface_list = malloc(sizeof(lispd_iface_list_elt)))==NULL){
-        LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for iface_list_elt: ", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for iface_list_elt: ", LISPD_ERRNO(errno));
         return(NULL);
     }
     if ((iface = malloc(sizeof(lispd_iface_elt)))==NULL){
-        LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for iface_elt: ", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for iface_elt: ", LISPD_ERRNO(errno));
         free(iface_list);
         return(NULL);
     }
     if ((iface->ipv4_address = (lisp_addr_t *)malloc(sizeof(lisp_addr_t)))==NULL){
-    	lispd_log_msg(LISP_LOG_WARNING,"Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+    	LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for lisp_addr_t: %s", LISPD_ERRNO(errno));
     	free(iface_list);
     	free(iface);
     	return(NULL);
     }
     if ((iface->ipv6_address = (lisp_addr_t *)malloc(sizeof(lisp_addr_t)))==NULL){
-    	lispd_log_msg(LISP_LOG_WARNING,"Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+    	LISPD_LOG(LISP_LOG_WARNING,"Unable to allocate memory for lisp_addr_t: %s", LISPD_ERRNO(errno));
     	free(iface_list);
     	free(iface->ipv4_address);
     	free(iface);
@@ -230,10 +230,8 @@ int add_mapping_to_interface (
         interface->head_mappings_list = mappings_list;
     }
 
-    lispd_log_msg(LISP_LOG_DEBUG_2,"The EID %s/%d has been assigned to the RLOCs of the interface %s",
-            get_char_from_lisp_addr_t(mapping->eid_prefix),
-            mapping->eid_prefix_length,
-            interface->iface_name);
+    LISPD_LOG(LISP_LOG_DEBUG_2,"The EID ", LISPD_MAPPING(mapping)," has been assigned to the RLOCs of the interface ",
+            LISPD_IFNAME(interface->iface_name));
 
     return (GOOD);
 }
@@ -395,7 +393,7 @@ lispd_iface_elt *get_any_output_iface(int afi)
             }
             break;
         default:
-            lispd_log_msg(LISP_LOG_DEBUG_2, "get_output_iface: unknown afi %d",afi);
+            LISPD_LOG(LISP_LOG_DEBUG_2, "unknown afi ", LISPD_INTEGER(afi) );
             break;
     }
 
@@ -489,7 +487,7 @@ int get_default_output_socket(int afi)
         }
         break;
     default:
-        lispd_log_msg(LISP_LOG_DEBUG_2, "get_default_output_socket: Packet with not valid AFI: %d",afi);
+        LISPD_LOG(LISP_LOG_DEBUG_2, "get_default_output_socket: Packet with not valid AFI: ", LISPD_INTEGER(afi));
         break;
     }
 
@@ -502,7 +500,7 @@ void set_default_output_ifaces()
     default_out_iface_v4 = get_any_output_iface(AF_INET);
 
     if (default_out_iface_v4 != NULL) {
-       lispd_log_msg(LISP_LOG_DEBUG_2,"Default IPv4 iface %s\n",default_out_iface_v4->iface_name);
+       LISPD_LOG(LISP_LOG_DEBUG_2,"Default IPv4 iface ",default_out_iface_v4->iface_name,"\n");
 #ifdef ROUTER
        set_tun_default_route_v4();
 #endif
@@ -510,7 +508,7 @@ void set_default_output_ifaces()
 
     default_out_iface_v6 = get_any_output_iface(AF_INET6);
     if (default_out_iface_v6 != NULL) {
-       lispd_log_msg(LISP_LOG_DEBUG_2,"Default IPv6 iface %s\n",default_out_iface_v6->iface_name);
+       LISPD_LOG(LISP_LOG_DEBUG_2,"Default IPv6 iface ",default_out_iface_v6->iface_name,"\n");
 #ifdef ROUTER
        // For IPv6, the route is not updated and should be removed before adding the new one
        del_tun_default_route_v6();
@@ -519,7 +517,7 @@ void set_default_output_ifaces()
     }
 
     if (!default_out_iface_v4 && !default_out_iface_v6){
-        lispd_log_msg(LISP_LOG_CRIT,"NO OUTPUT IFACE: all the locators are down");
+        LISPD_LOG(LISP_LOG_CRIT,"NO OUTPUT IFACE: all the locators are down");
     }
 }
 
@@ -529,15 +527,13 @@ void set_default_ctrl_ifaces()
     default_ctrl_iface_v4 = get_any_output_iface(AF_INET);
 
     if (default_ctrl_iface_v4 != NULL) {
-       lispd_log_msg(LISP_LOG_DEBUG_2,"Default IPv4 control iface %s: %s\n",
-               default_ctrl_iface_v4->iface_name, get_char_from_lisp_addr_t(*(default_ctrl_iface_v4->ipv4_address)));
+       LISPD_LOG(LISP_LOG_DEBUG_2,"Default IPv4 control iface ", default_ctrl_iface_v4->iface_name,": " , LISPD_EID( get_char_from_lisp_addr_t(*(default_ctrl_iface_v4->ipv4_address))),"\n");
     }
 
     default_ctrl_iface_v6 = get_any_output_iface(AF_INET6);
 
     if (default_ctrl_iface_v6 != NULL) {
-        lispd_log_msg(LISP_LOG_DEBUG_2,"Default IPv6 control iface %s: %s\n",
-                default_ctrl_iface_v6->iface_name, get_char_from_lisp_addr_t(*(default_ctrl_iface_v6->ipv6_address)));
+        LISPD_LOG(LISP_LOG_DEBUG_2,"Default IPv6 control iface ",default_ctrl_iface_v6->iface_name,": ", LISPD_RLOC(get_char_from_lisp_addr_t(*(default_ctrl_iface_v6->ipv6_address))) ,"\n");
     }
 
     /* Check NAT status */
@@ -548,7 +544,7 @@ void set_default_ctrl_ifaces()
     }
 
     if (!default_ctrl_iface_v4 && !default_ctrl_iface_v6){
-        lispd_log_msg(LISP_LOG_ERR,"NO CONTROL IFACE: all the locators are down");
+        LISPD_LOG(LISP_LOG_ERR,"NO CONTROL IFACE: all the locators are down");
     }
 }
 

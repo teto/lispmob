@@ -23,7 +23,7 @@
  *    LISP-MN developers <devel@lispmob.org>
  *
  * Based on code from Chris White <chris@logicalelegance.com>
- * 
+ *
  * Written or modified by:
  *    Alberto Rodriguez Natal <arnatal@ac.upc.edu>
  */
@@ -59,7 +59,7 @@ int create_tun(
 
     /* open the clone device */
     if( (*tun_receive_fd = open(clonedev, O_RDWR)) < 0 ) {
-        lispd_log_msg(LISP_LOG_CRIT, "TUN/TAP: Failed to open clone device");
+        LISPD_LOG(LISP_LOG_CRIT, "TUN/TAP: Failed to open clone device");
         exit_cleanup();
     }
 
@@ -71,9 +71,9 @@ int create_tun(
     // try to create the device
     if ((err = ioctl(*tun_receive_fd, TUNSETIFF, (void *) &ifr)) < 0) {
         close(*tun_receive_fd);
-        lispd_log_msg(LISP_LOG_CRIT, "TUN/TAP: Failed to create tunnel interface, errno: %d.", errno);
+        LISPD_LOG(LISP_LOG_CRIT, "TUN/TAP: Failed to create tunnel interface, errno: ", LISPD_INTEGER(errno) );
         if (errno == 16){
-            lispd_log_msg(LISP_LOG_CRIT, "Check no other instance of lispd is running. Exiting ...");
+            LISPD_LOG(LISP_LOG_CRIT, "Check no other instance of lispd is running. Exiting ...");
         }
         exit_cleanup();
     }
@@ -83,10 +83,10 @@ int create_tun(
     if ((err = ioctl(tmpsocket, SIOCGIFINDEX, (void *)&ifr)) < 0) {
         close(*tun_receive_fd);
         close(tmpsocket);
-        lispd_log_msg(LISP_LOG_CRIT, "TUN/TAP: unable to determine ifindex for tunnel interface, errno: %d.", errno);
+        LISPD_LOG(LISP_LOG_CRIT, "TUN/TAP: unable to determine ifindex for tunnel interface, errno: ", LISPD_INTEGER(errno ) );
         exit_cleanup();
     } else {
-        lispd_log_msg(LISP_LOG_DEBUG_3, "TUN/TAP ifindex is: %d", ifr.ifr_ifindex);
+        LISPD_LOG(LISP_LOG_DEBUG_3, "TUN/TAP ifindex is: ", LISPD_INTEGER(ifr.ifr_ifindex) );
         *tun_ifindex = ifr.ifr_ifindex;
 
         // Set the MTU to the configured MTU
@@ -96,7 +96,7 @@ int create_tun(
             lispd_log_msg(LISP_LOG_CRIT, "TUN/TAP: unable to set interface MTU to %d, errno: %d.", tun_mtu, errno);
             exit_cleanup();
         } else {
-            lispd_log_msg(LISP_LOG_DEBUG_1, "TUN/TAP mtu set to %d", tun_mtu);
+            LISPD_LOG(LISP_LOG_DEBUG_1, "TUN/TAP mtu set to ", LISPD_INTEGER(tun_mtu) );
         }
     }
 
@@ -106,19 +106,19 @@ int create_tun(
     *tun_receive_buf = (uint8_t *)malloc(tun_receive_size);
 
     if (tun_receive_buf == NULL){
-        lispd_log_msg(LISP_LOG_WARNING, "create_tun: Unable to allocate memory for tun_receive_buf: %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_WARNING, "create_tun: Unable to allocate memory for tun_receive_buf: ", strerror(errno));
         return(BAD);
     }
 
     /* this is the special file descriptor that the caller will use to talk
      * with the virtual interface */
-    lispd_log_msg(LISP_LOG_DEBUG_2, "Tunnel fd at creation is %d", *tun_receive_fd);
+    LISPD_LOG(LISP_LOG_DEBUG_2, "Tunnel fd at creation is ", LISPD_INTEGER(*tun_receive_fd) );
 
     /*
     if (!tuntap_install_default_routes()) {
         return(FALSE);
     }*/
-    
+
     return(GOOD);
 }
 
@@ -141,7 +141,7 @@ int tun_bring_up_iface(char *tun_dev_name)
     sockfd = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
 
     if (sockfd < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "tun_add_eid_to_iface: Failed to connect to netlink socket");
+        LISPD_LOG(LISP_LOG_ERR, "Failed to connect to netlink socket");
         return(BAD);
     }
 
@@ -164,12 +164,12 @@ int tun_bring_up_iface(char *tun_dev_name)
     retval = send(sockfd, sndbuf, nlh->nlmsg_len, 0);
 
     if (retval < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "tun_bring_up_iface: send() failed %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_ERR, "send() failed ", strerror(errno));
         close(sockfd);
         return(BAD);
     }
 
-    lispd_log_msg(LISP_LOG_DEBUG_1, "TUN interface UP.");
+    LISPD_LOG(LISP_LOG_DEBUG_1, "TUN interface UP.");
     close(sockfd);
     return(GOOD);
 }
@@ -199,7 +199,7 @@ int tun_add_eid_to_iface(
     sockfd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
 
     if (sockfd < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "tun_add_eid_to_iface: Failed to connect to netlink socket");
+        LISPD_LOG(LISP_LOG_ERR, "Failed to connect to netlink socket");
         return(BAD);
     }
 
@@ -235,12 +235,12 @@ int tun_add_eid_to_iface(
     retval = send(sockfd, sndbuf, nlh->nlmsg_len, 0);
 
     if (retval < 0) {
-        lispd_log_msg(LISP_LOG_ERR, "tun_add_eid_to_iface: send() failed %s", strerror(errno));
+        LISPD_LOG(LISP_LOG_ERR, "send() failed ", strerror(errno));
         close(sockfd);
         return(BAD);
     }
 
-    lispd_log_msg(LISP_LOG_DEBUG_1, "added %s EID to TUN interface.",get_char_from_lisp_addr_t(eid_address));
+    LISPD_LOG(LISP_LOG_DEBUG_1, "added EID ", LISPD_EID(get_char_from_lisp_addr_t(eid_address)) ," to TUN interface.");
     close(sockfd);
     return(GOOD);
 }
@@ -259,7 +259,7 @@ int set_tun_default_route_v4()
 
     prefix_len = 1;
     metric = 0;
-    
+
     get_lisp_addr_from_char("0.0.0.0",&gw);
 
 #ifdef ROUTER
