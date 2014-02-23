@@ -487,6 +487,7 @@ uint8_t *build_map_request_pkt(
     *nonce                         = mrp->nonce;
 
     if (src_eid != NULL){
+//    if (1){
         cur_ptr = pkt_fill_eid((uint8_t*)&(mrp->source_eid_afi),src_mapping);
 
         /* Add itr-rlocs */

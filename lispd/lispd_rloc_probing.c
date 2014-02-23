@@ -120,7 +120,9 @@ int rloc_probing(
         }
 
         opts.probe = TRUE;
-        err = build_and_send_map_request_msg(mapping,NULL,locator->locator_addr,opts,&(nonces->nonce[nonces->retransmits]));
+        //locator->advertised_addr
+//        lispd_log_msg(LISP_LOG_DEBUG_1," ==================\n\n\n %s and EID: %s/%d (%d retries)")
+        err = build_and_send_map_request_msg(mapping, &(mapping->eid_prefix),locator->locator_addr,opts,&(nonces->nonce[nonces->retransmits]));
 
         if (err != GOOD){
             lispd_log_msg(LISP_LOG_DEBUG_1,"rloc_probing: Couldn't send Map-Request Probe for locator %s and EID: %s/%d",
