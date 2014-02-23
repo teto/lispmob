@@ -40,7 +40,9 @@
  * Locator information
  */
 typedef struct lispd_locator_elt_ {
-    lisp_addr_t                 *locator_addr;
+    lisp_addr_t                 *locator_addr; /* TODO rename into encapsulation_addr ? */
+    lisp_addr_t                 *advertised_addr; /* Advertised RLOC in Map-Register for instance. Might point to the same lisp_addr as locator_addr */
+
     uint8_t                     *state;    /* UP , DOWN */
     uint8_t                     locator_type:2;
     uint8_t                     priority;
@@ -99,7 +101,8 @@ typedef struct rmt_locator_extended_info_ {
  * Generates the general structure of the locator without extended info
  */
 lispd_locator_elt   *new_locator (
-        lisp_addr_t                 *locator_addr,
+        lisp_addr_t                 *encap_addr,
+        lisp_addr_t                 *advertised_addr,
         uint8_t                     *state,    /* UP , DOWN */
         uint8_t                     priority,
         uint8_t                     weight,
@@ -111,6 +114,7 @@ lispd_locator_elt   *new_locator (
  */
 lispd_locator_elt   *new_local_locator (
         lisp_addr_t                 *locator_addr,
+        lisp_addr_t                 *advertised_addr,
         uint8_t                     *state,    /* UP , DOWN */
         uint8_t                     priority,
         uint8_t                     weight,

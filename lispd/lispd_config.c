@@ -66,6 +66,7 @@ int add_database_mapping(
         char   *eid,
         int    iid,
         char   *iface_name,
+        char   *override_rloc,
         int    priority_v4,
         int    weight_v4,
         int    priority_v6,
@@ -537,6 +538,7 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
             CFG_STR("eid-prefix",           0, CFGF_NONE),
             CFG_INT("iid",                  0, CFGF_NONE),
             CFG_STR("interface",            0, CFGF_NONE),
+            CFG_STR("advertise-rloc",       0, CFGF_NONE),
             CFG_INT("priority_v4",          0, CFGF_NONE),
             CFG_INT("weight_v4",            0, CFGF_NONE),
             CFG_INT("priority_v6",          0, CFGF_NONE),
@@ -771,6 +773,7 @@ int handle_lispd_config_file(char * lispdconf_conf_file)
         if (add_database_mapping(cfg_getstr(dm, "eid-prefix"),
                 cfg_getint(dm, "iid"),
                 cfg_getstr(dm, "interface"),
+                cfg_getstr(dm, "advertise-rloc"),
                 cfg_getint(dm, "priority_v4"),
                 cfg_getint(dm, "weight_v4"),
                 cfg_getint(dm, "priority_v6"),
@@ -913,6 +916,7 @@ int add_database_mapping(
         char   *eid,
         int    iid,
         char   *iface_name,
+        char   *override_rloc,
         int    priority_v4,
         int    weight_v4,
         int    priority_v6,
@@ -922,6 +926,7 @@ int add_database_mapping(
     lispd_mapping_elt           *mapping            = NULL;
     lispd_locator_elt           *locator            = NULL;
     lispd_iface_elt             *interface          = NULL;
+    lisp_addr_t                 *advertised_addr    = NULL;
     lisp_addr_t                 eid_prefix;           /* save the eid_prefix here */
     int                         eid_prefix_length   = 0;
     uint8_t                     is_new_mapping      = FALSE;
@@ -961,6 +966,7 @@ int add_database_mapping(
     }
 
 
+
     if (get_lisp_addr_and_mask_from_char(eid,&eid_prefix,&eid_prefix_length)!=GOOD){
         lispd_log_msg(LISP_LOG_ERR, "Configuration file: Error parsing EID address");
         return (BAD);
@@ -970,6 +976,8 @@ int add_database_mapping(
     if (if_nametoindex(iface_name) == 0) {
         lispd_log_msg(LISP_LOG_ERR, "Configuration file: INVALID INTERFACE or not initialized virtual interface: %s ", iface_name);
     }
+
+
 
     /*
      * Lookup if the mapping exists. If not, a new mapping is created.
@@ -1005,13 +1013,29 @@ int add_database_mapping(
         interface = add_interface (iface_name);
     }
 
+    /* set advertised addr check if override_rloc is defined. Only defined for IPv4 */
+    if( override_rloc ) {
+        if ((advertised_addr = malloc(sizeof(lisp_addr_t))) == NULL) {
+            lispd_log_msg(LISP_LOG_WARNING, "Unable to allocate memory for lisp_addr_t: %s", strerror(errno));
+            return(ERR_MALLOC);
+        }
+
+        if(get_lisp_addr_from_char( override_rloc, advertised_addr) != GOOD){
+            lispd_log_msg(LISP_LOG_WARNING, "Unable to create lisp_addr");
+            free(advertised_addr);
+            return (BAD);
+        }
+
+    }
+
+
     /* If we couldn't add the interface and the mapping is new, we remove it. */
     if (interface == NULL && is_new_mapping == TRUE){
         if (is_new_mapping){
             del_mapping_entry_from_db (mapping->eid_prefix, mapping->eid_prefix_length);
-            lispd_log_msg(LISP_LOG_WARNING,"add_database_mapping: Couldn't add mapping -> Cudn't create interface");
+            lispd_log_msg(LISP_LOG_WARNING,"add_database_mapping: Couldn't add mapping -> Couldn't create interface");
         }else{
-            lispd_log_msg(LISP_LOG_WARNING,"add_database_mapping: Couldn't add locator to the mapping -> Cudn't create interface");
+            lispd_log_msg(LISP_LOG_WARNING,"add_database_mapping: Couldn't add locator to the mapping -> Couldn't create interface");
         }
         return (BAD);
     }
@@ -1020,7 +1044,7 @@ int add_database_mapping(
     if (priority_v4 >= 0){
         if ((err = add_mapping_to_interface (interface, mapping, AF_INET)) == GOOD){
 
-            locator = new_local_locator (interface->ipv4_address,&(interface->status),priority_v4,weight_v4,255,0,&(interface->out_socket_v4));
+            locator = new_local_locator (interface->ipv4_address, ((advertised_addr) ? advertised_addr : interface->ipv4_address ), &(interface->status),priority_v4,weight_v4,255,0,&(interface->out_socket_v4));
 
             if (locator != NULL){
                 if ((err=add_locator_to_mapping (mapping,locator))!=GOOD){
@@ -1037,7 +1061,7 @@ int add_database_mapping(
     /* Assign the mapping to the v6 mappings of the interface. Create IPv6 locator and assign to the mapping  */
     if (priority_v6 >= 0){
         if ((err = add_mapping_to_interface (interface, mapping, AF_INET6)) == GOOD){
-            locator = new_local_locator (interface->ipv6_address,&(interface->status),priority_v6,weight_v6,255,0,&(interface->out_socket_v6));
+            locator = new_local_locator (interface->ipv6_address, ((advertised_addr) ? advertised_addr : interface->ipv6_address ),&(interface->status),priority_v6,weight_v6,255,0,&(interface->out_socket_v6));
             if (locator != NULL){
                 if ((err=add_locator_to_mapping (mapping,locator))!=GOOD){
                     free_locator(locator);

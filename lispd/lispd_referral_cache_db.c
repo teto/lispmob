@@ -184,7 +184,7 @@ int add_update_ddt_static_entry_to_db (
         return (BAD);
     }
     *state = UP;
-    if ((locator = new_locator ( ddt_locator_address, state, priority, weight, 255, 0)) == NULL){
+    if ((locator = new_locator ( ddt_locator_address, ddt_locator_address, state, priority, weight, 255, 0)) == NULL){
         lispd_log_msg(LISP_LOG_DEBUG_2,"add_update_ddt_static_entry_to_db: Unable to generate locator");
         if (is_new == TRUE){
             del_referral_cache_entry_from_db(referral_cache_entry);

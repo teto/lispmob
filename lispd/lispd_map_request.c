@@ -3,7 +3,7 @@
  *
  * This file is part of LISP Implementation.
  * Send a map request.
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -46,15 +46,15 @@
  *
  *
  *  Next is the inner IP header, either struct ip6_hdr or struct
- *  iphdr. 
+ *  iphdr.
  *
- *  This is follwed by a UDP header, random source port, 4342 
+ *  This is follwed by a UDP header, random source port, 4342
  *  dest port.
  *
  *  Followed by a struct lisp_pkt_map_request_t:
  *
  * Map-Request Message Format
- *   
+ *
  *       0                   1                   2                   3
  *       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  *      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -507,10 +507,10 @@ uint8_t *build_map_request_pkt(
                 }
 
                 itr_rloc = (lispd_pkt_map_request_itr_rloc_t *)cur_ptr;
-                itr_rloc->afi = htons(get_lisp_afi(locator->locator_addr->afi,NULL));
+                itr_rloc->afi = htons(get_lisp_afi(locator->advertised_addr->afi,NULL));
                 /* Add rloc address */
                 cur_ptr = CO(itr_rloc,sizeof(lispd_pkt_map_request_itr_rloc_t));
-                cpy_len = copy_addr((void *) cur_ptr ,locator->locator_addr, 0);
+                cpy_len = copy_addr((void *) cur_ptr ,locator->advertised_addr, 0);
                 cur_ptr = CO(cur_ptr, cpy_len);
                 locators_ctr ++;
                 locators_list[ctr] = locators_list[ctr]->next;

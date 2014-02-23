@@ -77,6 +77,7 @@ inline void free_rmt_locator_extended_info(rmt_locator_extended_info *extended_i
  */
 lispd_locator_elt   *new_locator (
         lisp_addr_t                 *locator_addr,
+        lisp_addr_t                 *advertised_addr,
         uint8_t                     *state,    /* UP , DOWN */
         uint8_t                     priority,
         uint8_t                     weight,
@@ -93,6 +94,7 @@ lispd_locator_elt   *new_locator (
 
     /* Initialize locator */
     locator->locator_addr = locator_addr;
+    locator->advertised_addr = advertised_addr;
     locator->locator_type = LOCAL_LOCATOR;
     locator->priority = priority;
     locator->weight = weight;
@@ -111,6 +113,7 @@ lispd_locator_elt   *new_locator (
  */
 lispd_locator_elt   *new_local_locator (
         lisp_addr_t                 *locator_addr,
+        lisp_addr_t                 *advertised_addr,
         uint8_t                     *state,    /* UP , DOWN */
         uint8_t                     priority,
         uint8_t                     weight,
@@ -120,7 +123,7 @@ lispd_locator_elt   *new_local_locator (
 {
     lispd_locator_elt       *locator                = NULL;
 
-    locator = new_locator (locator_addr, state, priority, weight, mpriority, mweight);
+    locator = new_locator (locator_addr, advertised_addr, state, priority, weight, mpriority, mweight);
 
     if (locator == NULL) {
         lispd_log_msg(LISP_LOG_DEBUG_2, "new_local_locator: Unable to generate lispd_locator_elt: %s", strerror(errno));
@@ -226,7 +229,7 @@ lispd_locator_elt   *new_static_rmt_locator (
 
     /* Generate the general lispd_locator_elt structure */
 
-    locator = new_locator (locator_addr, locator_state, priority, weight, mpriority, mweight);
+    locator = new_locator (locator_addr, locator_addr, locator_state, priority, weight, mpriority, mweight);
 
     if (locator == NULL) {
         lispd_log_msg(LISP_LOG_DEBUG_2, "new_static_rmt_locator: Unable to generate lispd_locator_elt: %s", strerror(errno));
@@ -275,6 +278,7 @@ lispd_locator_elt *copy_locator_elt(lispd_locator_elt *loc)
     }
     locator = new_locator(
             addr,
+            loc->advertised_addr,
             state,
             loc->priority,
             loc->weight,
@@ -434,6 +438,10 @@ void free_locator(lispd_locator_elt   *locator)
     }
     if (locator->locator_type != LOCAL_LOCATOR){
         free_rmt_locator_extended_info((rmt_locator_extended_info*)locator->extended_info);
+
+        if(locator->locator_addr != locator->advertised_addr) {
+            free (locator->advertised_addr);
+        }
         free (locator->locator_addr);
         free (locator->state);
     }else{
@@ -546,7 +554,7 @@ int add_locator_to_list (
 
     /* Add the locator to the list */
     if (locator->locator_type == LOCAL_LOCATOR &&
-            locator->locator_addr->afi != AF_UNSPEC){ /* If it's a local initialized locator, we should store it in order*/
+            locator->advertised_addr->afi != AF_UNSPEC){ /* If it's a local initialized locator, we should store it in order*/
         if (*list == NULL){
             *list = locator_list;
         }else{
@@ -554,16 +562,16 @@ int add_locator_to_list (
             aux_locator_list_next = *list;
             while (aux_locator_list_next != NULL){
                 if (locator->locator_addr->afi == AF_INET){
-                    cmp = memcmp(&(locator->locator_addr->address.ip),&(aux_locator_list_next->locator->locator_addr->address.ip),sizeof(struct in_addr));
+                    cmp = memcmp(&(locator->advertised_addr->address.ip),&(aux_locator_list_next->locator->advertised_addr->address.ip),sizeof(struct in_addr));
                 } else {
-                    cmp = memcmp(&(locator->locator_addr->address.ipv6),&(aux_locator_list_next->locator->locator_addr->address.ipv6),sizeof(struct in6_addr));
+                    cmp = memcmp(&(locator->advertised_addr->address.ipv6),&(aux_locator_list_next->locator->advertised_addr->address.ipv6),sizeof(struct in6_addr));
                 }
                 if (cmp < 0){
                     break;
                 }
                 if (cmp == 0){
                     lispd_log_msg(LISP_LOG_DEBUG_3, "add_locator_to_list: The locator %s already exists.",
-                            get_char_from_lisp_addr_t(*(locator->locator_addr)));
+                            get_char_from_lisp_addr_t(*(locator->advertised_addr)));
                     free (locator_list);
                     return (ERR_EXIST);
                 }

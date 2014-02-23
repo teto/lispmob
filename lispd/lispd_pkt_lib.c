@@ -3,7 +3,7 @@
  *
  * This file is part of LISP Mobile Node Implementation.
  * Necessary logic to handle incoming map replies.
- * 
+ *
  * Copyright (C) 2012 Cisco Systems, Inc, 2012. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -276,7 +276,7 @@ uint8_t *pkt_fill_mapping_record(
             if (lct_extended_info->rtr_locators_list != NULL){
                 itr_address = &(lct_extended_info->rtr_locators_list->locator->address);
             }else{
-                itr_address = locator->locator_addr;
+                itr_address = locator->advertised_addr;
             }
 
             if ((cpy_len = copy_addr((void *) CO(loc_ptr,

@@ -1,10 +1,10 @@
-/* 
+/*
  * lispd_map_register.c
  *
  * This file is part of LISP Implementation.
  * Send registration messages for each database mapping to
  * configured map-servers.
- * 
+ *
  * Copyright (C) 2011 Cisco Systems, Inc, 2011. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -300,7 +300,7 @@ int build_and_send_map_register_msg(lispd_mapping_elt *mapping)
         out_socket  = get_default_ctrl_socket (ms->address->afi);
 
         if (src_addr == NULL){
-            lispd_log_msg(LISP_LOG_DEBUG_1, "build_and_send_map_register_msg: Couden't send Map Register to %s, no output interface with afi %d.",
+            lispd_log_msg(LISP_LOG_DEBUG_1, "build_and_send_map_register_msg: Couldn't send Map Register to %s, no output interface with afi %d.",
                     get_char_from_lisp_addr_t(*(ms->address)),
                     ms->address->afi);
             ms = ms->next;
@@ -384,7 +384,7 @@ uint8_t *build_map_register_pkt(
     /*
      *  build the packet
      *
-     *  Fill in mrp->proxy_reply and compute the HMAC in 
+     *  Fill in mrp->proxy_reply and compute the HMAC in
      *  send_map_register()
      *
      */
